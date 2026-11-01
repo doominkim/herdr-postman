@@ -1,0 +1,13 @@
+# Use a user-defined theme from the themes dir.
+theme: anothertest
+use_host_environment: false
+response:
+  show_size_and_time: false
+heading:
+  show_host: false
+  show_version: false
+text_input:
+  blinking_cursor: false
+watch_env_files: false
+watch_collection_files: false
+watch_themes: false

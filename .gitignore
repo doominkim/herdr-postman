@@ -1,0 +1,11 @@
+/bin/
+__pycache__/
+*.pyc
+
+# Local tooling and private runtime data
+/.opencode/
+node_modules/
+.DS_Store
+/.env
+/.env.*
+/coverage.out

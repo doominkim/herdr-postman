@@ -1,0 +1,21 @@
+id = "herdr-postman"
+name = "herdr-postman"
+version = "0.1.0-dev"
+description = "Unofficial Postman terminal client: local collections, Cloud workspaces, and environments."
+min_herdr_version = "0.9.0"
+platforms = ["macos", "linux"]
+
+[[build]]
+command = ["/bin/sh", "scripts/build.sh"]
+
+[[panes]]
+id = "postman"
+title = "herdr-postman"
+placement = "tab"
+command = ["/bin/sh", "-c", 'exec /bin/sh "$HERDR_PLUGIN_ROOT/scripts/pane.sh"']
+
+[[actions]]
+id = "toggle"
+title = "herdr-postman: show / hide global panel"
+description = "Show or hide the shared Postman panel without changing repository tabs."
+command = ["/bin/sh", "scripts/global-toggle.sh"]

@@ -1,0 +1,16 @@
+theme: galaxy
+layout: horizontal
+use_host_environment: false
+load_user_themes: false
+response:
+  show_size_and_time: false
+focus:
+  on_startup: collection
+  on_response: body
+heading:
+  visible: false
+text_input:
+  blinking_cursor: false
+watch_env_files: false
+watch_collection_files: false
+watch_themes: false
