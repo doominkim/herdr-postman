@@ -3,7 +3,7 @@ __pycache__/
 *.pyc
 
 # Local tooling and private runtime data
-/.opencode/
+.opencode/
 node_modules/
 .DS_Store
 /.env
