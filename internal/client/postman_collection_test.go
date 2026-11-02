@@ -6,6 +6,7 @@ import (
 	"crypto/md5"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -528,5 +529,42 @@ func TestPostmanNativeCollectionVariablesApplyInsideFolders(t *testing.T) {
 	}
 	if resp.StatusCode != 200 || string(resp.Body) != "folder inherited" {
 		t.Fatal("folder execution failed")
+	}
+}
+
+func TestPostmanCollectionExplainsUnreachableServer(t *testing.T) {
+	bin, err := exec.LookPath("postman")
+	if err != nil {
+		t.Skip("Postman CLI not installed")
+	}
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	port := listener.Addr().(*net.TCPAddr).Port
+	listener.Close()
+	cases := []struct {
+		name, url, want string
+	}{
+		{"refused", fmt.Sprintf("http://127.0.0.1:%d/orders", port), fmt.Sprintf("Couldn't connect to GET http://127.0.0.1:%d/orders: connection refused (ECONNREFUSED). Is the server running?", port)},
+		{"unknown host", "http://herdr-postman-missing.invalid/orders", "Couldn't connect to GET http://herdr-postman-missing.invalid/orders: host not found (ENOTFOUND)."},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			input := fmt.Sprintf("$kind: http-request\nmethod: GET\nurl: '%s'\n", tc.url)
+			if err := os.WriteFile(filepath.Join(dir, "orders.request.yaml"), []byte(input), 0600); err != nil {
+				t.Fatal(err)
+			}
+			store := collection.NewNativeStore(dir)
+			coll, problems := store.Load()
+			if len(problems) > 0 {
+				t.Fatal(problems)
+			}
+			_, err := (&PostmanCollection{Binary: bin, Root: dir, Render: store.Render}).Send(context.Background(), Call{Request: coll.Requests[0]})
+			if err == nil || err.Error() != tc.want {
+				t.Fatalf("error = %v, want %q", err, tc.want)
+			}
+		})
 	}
 }

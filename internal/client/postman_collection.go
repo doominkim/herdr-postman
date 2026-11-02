@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/fs"
 	"net"
@@ -226,6 +227,9 @@ func (p *PostmanCollection) Send(ctx context.Context, call Call) (*model.Respons
 	select {
 	case captured = <-captures:
 	default:
+		if message := unreachableMessage(output.String()); message != "" {
+			return nil, errors.New(message)
+		}
 		if runErr != nil {
 			return nil, fmt.Errorf("Postman collection produced no response: %w\n\n%s", runErr, lastLines(output.String(), 20))
 		}
@@ -271,6 +275,39 @@ func (p *PostmanCollection) Send(ctx context.Context, call Call) (*model.Respons
 	}
 	postmanResponseCookies(response)
 	return response, nil
+}
+
+var (
+	erroredRequest = regexp.MustCompile(`(?m)^\s*([A-Z]+) (\S+) \[errored\]\s*\n\s*(.*\S)`)
+	errorCode      = regexp.MustCompile(`\bE[A-Z_]{3,}\b`)
+)
+
+// connectionErrors describes the Node error codes Postman CLI prints under an
+// errored request. Its failure table only shows "[object Object]" for them.
+var connectionErrors = map[string]string{
+	"ECONNREFUSED": "connection refused (ECONNREFUSED). Is the server running?",
+	"ENOTFOUND":    "host not found (ENOTFOUND).",
+	"EAI_AGAIN":    "host lookup failed (EAI_AGAIN).",
+	"ETIMEDOUT":    "connection timed out (ETIMEDOUT).",
+	"ECONNRESET":   "connection reset by the server (ECONNRESET).",
+	"EHOSTUNREACH": "host unreachable (EHOSTUNREACH).",
+	"ENETUNREACH":  "network unreachable (ENETUNREACH).",
+}
+
+// unreachableMessage explains a request that never got a response, using the
+// "METHOD URL [errored]" line Postman CLI prints before its summary table.
+func unreachableMessage(output string) string {
+	match := erroredRequest.FindStringSubmatch(output)
+	if match == nil {
+		return ""
+	}
+	reason := match[3]
+	if code := errorCode.FindString(reason); code != "" {
+		if text, ok := connectionErrors[code]; ok {
+			reason = text
+		}
+	}
+	return fmt.Sprintf("Couldn't connect to %s %s: %s", match[1], match[2], reason)
 }
 
 func lastLines(text string, n int) string {
