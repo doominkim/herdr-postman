@@ -18,6 +18,8 @@ Edit requests, choose an environment, and inspect the response body, headers, st
 
 Press **Ctrl+Enter** to send from any panel. Dragging across the request or response body copies the selection; **Copy all** on the response heading copies the whole response body. To read modified keys such as Ctrl+Enter, herdr-postman turns on the Kitty keyboard protocol; set `TERMA_DISABLE_KITTY_KEYBOARD=1` if your terminal misreads keys with it.
 
+Click on a variable such as `{{product_id}}` in the URL, a params, headers or form row, or the raw body, or move the cursor onto it, to see its value and source below it. Click the value to change it: **Enter** saves it as the current value, as in the Variables dialog, and **Esc** cancels.
+
 Cloud environments load their values when selected. Environment values override collection defaults; session overrides take precedence. The new Cloud environment cache stores names and IDs, not variable values.
 
 ## Continue in Postman Desktop

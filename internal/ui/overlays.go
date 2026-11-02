@@ -44,6 +44,7 @@ func (o overlays) Build(ctx t.BuildContext) t.Widget {
 		confirmOverlay{app: a, visible: overlay == "confirm"},
 		curlOverlay{app: a, visible: overlay == "curl"},
 		envFileOverlay{app: a, visible: overlay == "envfile"},
+		variablePopover{app: a},
 		t.Toasts{ID: "toasts", State: a.toasts},
 	}}
 }

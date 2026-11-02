@@ -179,6 +179,7 @@ type App struct {
 	save               *saveForm
 	responseSave       *responseSaveForm
 	variables          *variablesForm
+	variablePopover    *variablePopoverState
 	curlDialog         *curlForm
 	toasts             *t.ToastState
 }
@@ -300,6 +301,7 @@ func New(cfg Config) *App {
 	a.save = newSaveForm()
 	a.responseSave = newResponseSaveForm()
 	a.variables = newVariablesForm()
+	a.variablePopover = newVariablePopoverState()
 	a.curlDialog = newCurlForm()
 	a.openSession(model.NewRequest())
 
