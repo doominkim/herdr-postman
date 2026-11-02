@@ -258,7 +258,7 @@ func (c collectionView) Build(ctx t.BuildContext) t.Widget {
 					// Guides are kept faint so the methods and names lead.
 					GuideStyle: t.Style{ForegroundColor: theme.TextMuted.WithAlpha(0.12)},
 					RenderNode: func(i treeItem, node t.TreeNodeContext) t.Widget {
-						return a.trackTreeRow(row(i, node), node.Path)
+						return a.withRequestMenu(a.trackTreeRow(row(i, node), node.Path), i.Request)
 					},
 					Style: t.Style{Width: t.Flex(1)},
 				}},

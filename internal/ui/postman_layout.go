@@ -3,6 +3,7 @@ package ui
 import (
 	"github.com/darrenburns/posting/v3/internal/model"
 	t "github.com/darrenburns/terma"
+	uv "github.com/darrenburns/ultraviolet"
 	"strings"
 )
 
@@ -31,6 +32,10 @@ type postmanRequestHeading struct {
 
 func (h postmanRequestHeading) Build(ctx t.BuildContext) t.Widget {
 	name := h.session.name.GetText()
+	saving := h.app.requestActions.saving.Get() == h.session
+	if saving {
+		name = h.app.requestActions.pending
+	}
 	if name == "" {
 		name = "Untitled Request"
 	}
@@ -46,8 +51,28 @@ func (h postmanRequestHeading) Build(ctx t.BuildContext) t.Widget {
 	if h.session.dirty.Get() {
 		name += " •"
 	}
+	theme := ctx.Theme()
+	spans := []t.Span{{Text: name, Style: t.SpanStyle{Foreground: theme.Text}}}
+	if saving {
+		spans = append(spans, t.Span{Text: "  Saving…", Style: t.SpanStyle{Foreground: theme.TextMuted}})
+	}
+	var title t.Widget = t.Text{
+		ID:    postmanTitleID,
+		Spans: spans,
+		Click: func(e t.MouseEvent) {
+			if e.Button == uv.MouseLeft && !saving {
+				h.app.startRename(h.session)
+			}
+		},
+	}
+	if h.app.requestActions.renaming.Get() == h.session {
+		title = input{ID: postmanRenameID, State: h.app.requestActions.name, Placeholder: "Request name", OnSubmit: func(string) { h.app.commitRename() }, Keybinds: []t.Keybind{
+			{Key: "escape", Name: "Cancel", Action: h.app.cancelRename},
+		}}
+	}
 	return t.Row{Style: t.Style{Height: t.Cells(1), Width: t.Flex(1), Padding: t.EdgeInsetsXY(1, 0)}, Children: []t.Widget{
-		t.Text{Content: name, Style: t.Style{Width: t.Flex(1), ForegroundColor: ctx.Theme().Text}},
+		title,
+		t.Spacer{},
 		t.Button{ID: "postman-save", Label: "Save", DisableFocus: true, OnPress: h.app.saveRequest},
 	}}
 }

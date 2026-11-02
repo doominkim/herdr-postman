@@ -185,6 +185,7 @@ type App struct {
 	responseSave       *responseSaveForm
 	variables          *variablesForm
 	variablePopover    *variablePopoverState
+	requestActions     *requestActions
 	curlDialog         *curlForm
 	toasts             *t.ToastState
 }
@@ -308,6 +309,7 @@ func New(cfg Config) *App {
 	a.responseSave = newResponseSaveForm()
 	a.variables = newVariablesForm()
 	a.variablePopover = newVariablePopoverState()
+	a.requestActions = newRequestActions()
 	a.curlDialog = newCurlForm()
 	a.openSession(model.NewRequest())
 
@@ -1338,15 +1340,23 @@ func splitFile(file string) (folder, name string) {
 	return "", file
 }
 
+// findFolder is the folder at path, a directory relative to the collection
+// root. Folders are matched by Path rather than Name, which may be a label.
 func findFolder(root *model.Collection, path string) *model.Collection {
 	if path == "" {
 		return root
 	}
 	folder := root
+	built := ""
 	for _, part := range strings.Split(path, "/") {
+		if built == "" {
+			built = part
+		} else {
+			built += "/" + part
+		}
 		var next *model.Collection
 		for _, child := range folder.Children {
-			if child.Name == part {
+			if child.Path == built {
 				next = child
 			}
 		}

@@ -205,7 +205,9 @@ func EnsureFolder(root *model.Collection, folderPath string) *model.Collection {
 		}
 		var next *model.Collection
 		for _, child := range folder.Children {
-			if child.Name == part {
+			// Path, not Name: a native folder is labelled from its
+			// definition, so its name can differ from its directory.
+			if child.Path == built {
 				next = child
 			}
 		}
