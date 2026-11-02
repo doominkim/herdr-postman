@@ -161,9 +161,11 @@ type Session struct {
 	responseTrailers       *t.TableState[model.Header]
 	responseTrailersScroll *t.ScrollState
 	spinner                *t.SpinnerState
-	streamShimmer          *t.ShimmerState
-	generation             uint64
-	cancel                 context.CancelFunc
+	// sendStarted is when the request in flight was sent.
+	sendStarted   time.Time
+	streamShimmer *t.ShimmerState
+	generation    uint64
+	cancel        context.CancelFunc
 	// live is set once the exchange in flight has shown part of its response.
 	live bool
 	// stream is the open stream of the exchange in flight, if it has one.
@@ -619,6 +621,7 @@ func (s *Session) Send(sender client.Sender, call client.Call, onDone func(model
 	s.trace.Set(nil)
 	s.uploadProgress.Set(uploadProgress{})
 	s.oauth.status.Set("")
+	s.sendStarted = time.Now()
 	s.spinner.Start()
 	inFlight := func() bool { return generation == s.generation && s.phase.Peek() == exchangeSending }
 

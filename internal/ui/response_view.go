@@ -75,7 +75,7 @@ func (p responsePanel) Build(ctx t.BuildContext) t.Widget {
 			t.ParseMarkupToText(p.streamHints(streaming), theme),
 			status,
 		}
-	case resp != nil:
+	case resp != nil && !(p.app.postmanUI && phase == exchangeSending):
 		status := s.responseStatus
 		fg, bg := statusColors(theme, status.Class)
 		if p.app.settings.Response.ShowSizeAndTime {
@@ -119,8 +119,27 @@ func (p responsePanel) Build(ctx t.BuildContext) t.Widget {
 			label = fmt.Sprintf("Uploading %s / %s", model.FormatBytes(int(progress.sent)), model.FormatBytes(int(progress.total)))
 		}
 		content = waiting(theme, s.spinner, label, "[$TextMuted]Press [b]esc[/] to cancel[/]")
-	case resp == nil && phase == exchangeSending:
-		content = waiting(theme, s.spinner, "Sending request…", "[$TextMuted]Press [b]esc[/] to cancel[/]")
+	// The Postman layout replaces the previous response, so a send always
+	// visibly starts. A live response keeps showing as it arrives.
+	case phase == exchangeSending && (resp == nil || p.app.postmanUI && !s.live):
+		hints := "[$TextMuted]Press [b]esc[/] to cancel[/]"
+		if !p.app.postmanUI {
+			content = waiting(theme, s.spinner, "Sending request…", hints)
+		} else {
+			content = t.Column{
+				Style:      t.Style{Width: t.Flex(1), Height: t.Flex(1)},
+				MainAlign:  t.MainAxisCenter,
+				CrossAlign: t.CrossAxisCenter,
+				Children: []t.Widget{
+					t.Row{Spacing: 1, Children: []t.Widget{
+						t.Spinner{State: s.spinner, Style: t.Style{ForegroundColor: theme.AccentText}},
+						t.Text{Content: "Sending request…", Style: t.Style{ForegroundColor: theme.Text}},
+						sendElapsed{session: s},
+					}},
+					t.ParseMarkupToText(hints, theme),
+				},
+			}
+		}
 	case resp == nil:
 		content = emptyState{Title: "No response yet", Lines: []string{"Press [b]" + escapeMarkup(p.app.keyHint("send-request")) + "[/] to send the request"}}
 		if p.app.postmanUI {
@@ -707,4 +726,14 @@ func (r responseRun) Build(ctx t.BuildContext) t.Widget {
 		Style:              t.Style{Width: t.Flex(1), Height: t.Flex(1)},
 		Child:              t.Text{Content: r.response.PostmanRun.Output},
 	}
+}
+
+// sendElapsed counts up while a request is in flight, so a slow Postman CLI
+// run visibly makes progress. It redraws with each spinner frame.
+type sendElapsed struct{ session *Session }
+
+func (e sendElapsed) Build(ctx t.BuildContext) t.Widget {
+	e.session.spinner.Frame()
+	elapsed := time.Since(e.session.sendStarted).Truncate(100 * time.Millisecond)
+	return t.Text{Content: fmt.Sprintf("%.1fs", elapsed.Seconds()), Style: t.Style{ForegroundColor: ctx.Theme().TextMuted}}
 }

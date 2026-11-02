@@ -46,8 +46,13 @@ func (u urlBar) Build(ctx t.BuildContext) t.Widget {
 	}
 	resolve := a.resolver()
 	sendLabel := a.icons.send + "Send"
+	onSend := a.send
 	if a.postmanUI {
 		sendLabel = "Send"
+		// Like Postman, the button stops a request in flight.
+		if s.phase.Get() == exchangeSending && s.streaming.Get() == streamNone {
+			sendLabel, onSend = "Cancel", a.cancelSend
+		}
 	}
 	if s.kind.Get() == model.KindWebSocket && s.streaming.Get() != streamOpen {
 		sendLabel = "Connect"
@@ -93,7 +98,7 @@ func (u urlBar) Build(ctx t.BuildContext) t.Widget {
 						DisableFocus: true,
 						Label:        sendLabel,
 						Variant:      t.ButtonPrimary,
-						OnPress:      a.send,
+						OnPress:      onSend,
 					},
 				},
 			},
