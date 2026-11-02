@@ -184,7 +184,7 @@ func (b bodyEditor) Build(ctx t.BuildContext) t.Widget {
 			Active:   contentType,
 			OnChange: func(value string) { s.contentType.Set(value); s.touch() },
 		})
-		var area t.Widget = t.TextArea{
+		textArea := t.TextArea{
 			ID:            "req-body-text",
 			State:         s.body,
 			ScrollState:   s.bodyScroll,
@@ -195,6 +195,10 @@ func (b bodyEditor) Build(ctx t.BuildContext) t.Widget {
 			OnChange:      func(string) { s.touch() },
 			ExtraKeybinds: b.app.externalKeybinds(s.body, languageFor(contentType), s.touch),
 		}
+		if b.app.postmanUI {
+			textArea.MouseUp = func(t.MouseEvent) { b.app.copyDragSelection(s.body) }
+		}
+		var area t.Widget = textArea
 		// Variables are only worth completing when they'll be substituted.
 		if s.substitute.Checked.Get() {
 			area = s.bodyVars.wrap(theme, area, b.app.variableChoices(), t.Flex(1))

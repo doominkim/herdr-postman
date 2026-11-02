@@ -65,8 +65,9 @@ func (f postmanFooter) Build(ctx t.BuildContext) t.Widget {
 	}}
 }
 
-// postmanPanel puts editor tabs at the left and response metadata at the right.
-func postmanPanel(theme t.ThemeData, title string, tabs *tabStrip, info []t.Text, content t.Widget) t.Widget {
+// postmanPanel puts editor tabs at the left and response metadata and actions
+// at the right.
+func postmanPanel(theme t.ThemeData, title string, tabs *tabStrip, info []t.Text, content t.Widget, actions ...t.Widget) t.Widget {
 	heading := []t.Widget{}
 	if tabs != nil {
 		heading = append(heading, *tabs)
@@ -79,6 +80,7 @@ func postmanPanel(theme t.ThemeData, title string, tabs *tabStrip, info []t.Text
 	for _, part := range info {
 		heading = append(heading, part)
 	}
+	heading = append(heading, actions...)
 	return t.Column{Style: t.Style{Width: t.Flex(1), Height: t.Flex(1)}, Children: []t.Widget{
 		t.Row{Style: t.Style{Width: t.Flex(1), Height: t.Cells(1), BackgroundColor: theme.Surface}, Spacing: 1, Children: heading}, content,
 	}}

@@ -14,7 +14,10 @@ import (
 	"github.com/darrenburns/posting/v3/internal/model"
 )
 
-const responseTabsID = "resp-tabs"
+const (
+	responseTabsID    = "resp-tabs"
+	responseCopyAllID = "resp-copy-all"
+)
 
 type uploadProgress struct {
 	sent, total int64
@@ -90,7 +93,7 @@ func (p responsePanel) Build(ctx t.BuildContext) t.Widget {
 		if err != nil {
 			message = err.Error()
 		}
-		content = emptyState{Title: "Request failed", Lines: []string{"[$Error]" + escapeMarkup(message) + "[/]", "Press [b]ctrl+j[/] to try again"}}
+		content = emptyState{Title: "Request failed", Lines: []string{"[$Error]" + escapeMarkup(message) + "[/]", "Press [b]" + escapeMarkup(p.app.keyHint("send-request")) + "[/] to try again"}}
 	case phase == exchangeSending && strings.HasPrefix(s.oauth.status.Get(), "Waiting for OAuth"):
 		content = t.Column{
 			Style:      t.Style{Width: t.Flex(1), Height: t.Flex(1)},
@@ -119,9 +122,9 @@ func (p responsePanel) Build(ctx t.BuildContext) t.Widget {
 	case resp == nil && phase == exchangeSending:
 		content = waiting(theme, s.spinner, "Sending request…", "[$TextMuted]Press [b]esc[/] to cancel[/]")
 	case resp == nil:
-		content = emptyState{Title: "No response yet", Lines: []string{"Press [b]ctrl+j[/] to send the request"}}
+		content = emptyState{Title: "No response yet", Lines: []string{"Press [b]" + escapeMarkup(p.app.keyHint("send-request")) + "[/] to send the request"}}
 		if p.app.postmanUI {
-			content = emptyState{Title: "Click Send to get a response", Lines: []string{"Or press [b]ctrl+enter[/]"}}
+			content = emptyState{Title: "Click Send to get a response", Lines: []string{"Or press [b]" + escapeMarkup(p.app.keyHint("send-request")) + "[/]"}}
 		}
 	default:
 		strip := s.responseTabs(resp)
@@ -130,7 +133,11 @@ func (p responsePanel) Build(ctx t.BuildContext) t.Widget {
 	}
 
 	if p.app.postmanUI {
-		return postmanPanel(theme, "Response", tabs, info, content)
+		var actions []t.Widget
+		if tabs != nil && len(resp.Body) > 0 && s.responseImage.Get() == nil {
+			actions = append(actions, t.Button{ID: responseCopyAllID, Label: "Copy all", DisableFocus: true, OnPress: func() { p.app.notify(s.copyWholeBody(), toastSuccess) }})
+		}
+		return postmanPanel(theme, "Response", tabs, info, content, actions...)
 	}
 	return section{
 		Prefix: "resp-",
@@ -342,6 +349,9 @@ func (b responseBody) Build(ctx t.BuildContext) t.Widget {
 		Style:         t.Style{Width: t.Flex(1), BackgroundColor: theme.Background, Padding: t.EdgeInsetsXY(1, 0)},
 		MouseDown:     func(t.MouseEvent) { s.responseVisual.Set(false) },
 		ExtraKeybinds: append(s.responseBodyKeybinds(copyBody, s.responseVisual.Get()), b.app.externalKeybinds(s.responseBody, languageFor(contentType), nil)...),
+	}
+	if b.app.postmanUI {
+		area.MouseUp = func(t.MouseEvent) { b.app.copyDragSelection(s.responseBody) }
 	}
 	if image {
 		area.ExtraKeybinds = append(area.ExtraKeybinds, t.Keybind{Key: "f2", Name: "Image preview", Action: s.toggleImagePreview})

@@ -48,7 +48,7 @@ func (a *App) actions() []action {
 		for i := range actions {
 			switch actions[i].id {
 			case "send-request":
-				actions[i].keys = []string{"ctrl+enter", "ctrl+j", "alt+enter"}
+				actions[i].keys = []string{"ctrl+enter", "alt+enter"}
 			case "new-request":
 				actions[i].keys = []string{"ctrl+t", "ctrl+n"}
 			case "commands":

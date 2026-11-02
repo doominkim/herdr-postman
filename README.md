@@ -16,6 +16,8 @@ The last source, workspace, environment selection, and collapsed collection fold
 
 Edit requests, choose an environment, and inspect the response body, headers, status, timing, and test results. Execution uses Postman CLI, including supported collection authentication and scripts. The interface follows Postman's request and response layout, with keyboard navigation and mouse support.
 
+Press **Ctrl+Enter** to send from any panel. Dragging across the request or response body copies the selection; **Copy all** on the response heading copies the whole response body. To read modified keys such as Ctrl+Enter, herdr-postman turns on the Kitty keyboard protocol; set `TERMA_DISABLE_KITTY_KEYBOARD=1` if your terminal misreads keys with it.
+
 Cloud environments load their values when selected. Environment values override collection defaults; session overrides take precedence. The new Cloud environment cache stores names and IDs, not variable values.
 
 ## Continue in Postman Desktop

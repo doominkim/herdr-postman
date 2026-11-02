@@ -35,6 +35,7 @@ func run() int {
 		fmt.Fprintln(os.Stderr, err)
 		return 2
 	}
+	enableModifierKeys()
 	if opts.source == "choose" || opts.source == "local" {
 		return runSourceHost(opts)
 	}

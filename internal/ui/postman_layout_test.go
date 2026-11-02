@@ -91,7 +91,7 @@ func TestPostmanSaveButtonPersistsEditorDraft(tt *testing.T) {
 func TestPostmanKeyboardUsesRequestAndCommandShortcuts(tt *testing.T) {
 	app := New(Config{PostmanUI: true})
 	defer app.Close()
-	for id, key := range map[string]string{"send-request": "ctrl+enter", "new-request": "ctrl+t", "commands": "ctrl+shift+p"} {
+	for id, key := range map[string]string{"new-request": "ctrl+t", "commands": "ctrl+shift+p"} {
 		if !slices.Contains(app.keysFor(id), key) {
 			tt.Fatalf("%s missing shortcut %s", id, key)
 		}

@@ -270,8 +270,8 @@ func (a *App) copyCurlText() {
 	a.notify("Copied "+what+" to clipboard", toastSuccess)
 }
 
-// curlKeys lets ctrl+j (the send key) import from inside the text area,
-// where enter adds a new line.
+// curlKeys lets the send keys import from inside the text area, where enter
+// adds a new line.
 type curlKeys struct {
 	fillParent
 	app       *App
@@ -281,10 +281,11 @@ type curlKeys struct {
 
 func (k curlKeys) Keybinds() []t.Keybind {
 	if k.importing {
-		return []t.Keybind{
-			{Key: "ctrl+j", Name: "Import", Action: k.app.submitCurlImport},
-			{Key: "alt+enter", Name: "Import", Action: k.app.submitCurlImport, Hidden: true},
+		var binds []t.Keybind
+		for i, key := range k.app.keysFor("send-request") {
+			binds = append(binds, t.Keybind{Key: key, Name: "Import", Action: k.app.submitCurlImport, Hidden: i > 0})
 		}
+		return binds
 	}
 	return []t.Keybind{{Key: "y", Name: "Copy", Action: k.app.copyCurlText}}
 }

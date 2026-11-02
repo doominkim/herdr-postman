@@ -221,6 +221,27 @@ func (s *Session) copyBody() string {
 	return "Copied response body"
 }
 
+// copyDragSelection copies the text a mouse drag selected in area, as a
+// terminal does. A release that ends a plain click copies nothing.
+func (a *App) copyDragSelection(area *t.TextAreaState) {
+	text := area.GetSelectedText()
+	if text == "" {
+		return
+	}
+	t.SetClipboard(t.SystemClipboard, text)
+	a.notify("Copied "+pluralize(utf8.RuneCountInString(text), "character"), toastSuccess)
+}
+
+// copyWholeBody copies the entire response body, whatever is selected.
+func (s *Session) copyWholeBody() string {
+	resp := s.response.Peek()
+	if resp == nil {
+		return ""
+	}
+	t.SetClipboard(t.SystemClipboard, formatBody(resp, s.prettifyJSON))
+	return "Copied response body"
+}
+
 // cursorLineStart is a smart home: the first non-blank character on the
 // line, or the start of the line if the cursor is already there.
 func cursorLineStart(body *t.TextAreaState) {
