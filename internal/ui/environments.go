@@ -47,6 +47,12 @@ func (s StaticEnvironments) Load(files []string) (model.Environment, error) {
 	return model.Environment{Name: strings.Join(files, " + "), Files: files}, nil
 }
 
+// LocalValues stores each environment's current values on this machine.
+type LocalValues interface {
+	Load(files []string) map[string]string
+	Save(files []string, vars map[string]string) error
+}
+
 // envKey identifies a set of files, for comparing environments.
 func envKey(files []string) string { return strings.Join(files, "\x00") }
 
@@ -124,9 +130,13 @@ func (a *App) variableValues() map[string]string { return model.Values(a.resolve
 func (a *App) variableValuesPeek() map[string]string { return model.Values(a.variableList()) }
 
 func (a *App) layerVariables(envVars []model.Variable, session map[string]string) []model.Variable {
+	source := "session"
+	if a.localValues != nil {
+		source = "current value"
+	}
 	sessionVars := make([]model.Variable, 0, len(session))
 	for name, value := range session {
-		sessionVars = append(sessionVars, model.Variable{Name: name, Value: value, Source: "session", SessionOverride: true})
+		sessionVars = append(sessionVars, model.Variable{Name: name, Value: value, Source: source, SessionOverride: true})
 	}
 	return model.Merge(a.env.host, envVars, sessionVars)
 }
@@ -161,6 +171,12 @@ func startupSessionVars(vars map[string]string) map[string]string {
 // next run.
 func (a *App) setSessionVars(vars map[string]string) {
 	a.sessionVars.Set(vars)
+	if a.localValues != nil {
+		if err := a.localValues.Save(a.env.active.Peek().Files, maps.Clone(vars)); err != nil {
+			a.notify("Couldn't save current values: "+err.Error(), toastWarning)
+		}
+		return
+	}
 	if a.rememberSession != nil {
 		a.rememberSession(maps.Clone(vars))
 	}
@@ -180,6 +196,30 @@ func (a *App) captureResponse(req model.Request, resp *model.Response) {
 	vars := make(map[string]string, len(a.sessionVars.Peek())+len(values))
 	maps.Copy(vars, a.sessionVars.Peek())
 	maps.Copy(vars, values)
+	a.setSessionVars(vars)
+	if a.overlay.Peek() == "variables" {
+		a.refreshVariableRows()
+	}
+}
+
+// captureScriptVariables keeps values that request scripts set, comparing the
+// environment the CLI exported with the values the request was sent with.
+func (a *App) captureScriptVariables(sent map[string]string, resp *model.Response) {
+	if resp == nil || resp.PostmanRun == nil || resp.PostmanRun.Environment == nil {
+		return
+	}
+	changed := map[string]string{}
+	for name, value := range resp.PostmanRun.Environment {
+		if before, ok := sent[name]; !ok || before != value {
+			changed[name] = value
+		}
+	}
+	if len(changed) == 0 {
+		return
+	}
+	vars := make(map[string]string, len(a.sessionVars.Peek())+len(changed))
+	maps.Copy(vars, a.sessionVars.Peek())
+	maps.Copy(vars, changed)
 	a.setSessionVars(vars)
 	if a.overlay.Peek() == "variables" {
 		a.refreshVariableRows()
@@ -209,6 +249,9 @@ func (a *App) activateEnvironment(files []string) bool {
 
 func (a *App) setEnvironment(e model.Environment) {
 	a.env.active.Set(e)
+	if a.localValues != nil {
+		a.sessionVars.Set(startupSessionVars(a.localValues.Load(e.Files)))
+	}
 	a.env.mu.Lock()
 	a.env.watched = e.Files
 	a.env.mu.Unlock()

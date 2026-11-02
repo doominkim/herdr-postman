@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -114,32 +115,54 @@ func (p *PostmanCollection) Send(ctx context.Context, call Call) (*model.Respons
 		}
 		w.WriteHeader(http.StatusNoContent)
 	})
+	environmentPath := "/environment/" + token
+	environments := make(chan map[string]string, 1)
+	mux.HandleFunc(environmentPath, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+		values := map[string]string{}
+		if err := json.NewDecoder(r.Body).Decode(&values); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		select {
+		case environments <- values:
+		default:
+		}
+		w.WriteHeader(http.StatusNoContent)
+	})
 	server := &http.Server{Handler: mux, ReadHeaderTimeout: 5 * time.Second}
 	defer server.Close()
 	go server.Serve(listener)
 	callback, _ := json.Marshal("http://" + listener.Addr().String() + capturePath)
 	script := `pm.sendRequest({url:` + string(callback) + `,method:'POST',header:{'Content-Type':'application/json'},body:{mode:'raw',raw:JSON.stringify({code:pm.response.code,status:pm.response.status,headers:pm.response.headers.all(),body:Buffer.from(pm.response.stream).toString('base64'),time:pm.response.responseTime,url:pm.request.url.toString(),method:pm.request.method})}},function(){});` + "\n"
+	environmentCallback, _ := json.Marshal("http://" + listener.Addr().String() + environmentPath)
+	environmentScript := `pm.sendRequest({url:` + string(environmentCallback) + `,method:'POST',header:{'Content-Type':'application/json'},body:{mode:'raw',raw:JSON.stringify(Object.fromEntries(Object.entries(pm.environment.toObject()).map(([k,v])=>[k,v==null?'':String(v)])))}},function(){});` + "\n"
 	scripts, _ := document["scripts"].([]any)
 	attached := false
 	for _, item := range scripts {
 		if entry, ok := item.(map[string]any); ok && entry["type"] == "afterResponse" {
 			code, _ := entry["code"].(string)
-			entry["code"] = script + code
+			entry["code"] = script + "try {\n" + code + "\n} finally {\n" + environmentScript + "}\n"
 			attached = true
 			break
 		}
 	}
 	if !attached {
-		scripts = append(scripts, map[string]any{"type": "afterResponse", "language": "text/javascript", "code": script})
+		scripts = append(scripts, map[string]any{"type": "afterResponse", "language": "text/javascript", "code": script + environmentScript})
 	}
 	document["scripts"] = scripts
 	// Select by the schema-defined item ID so duplicate display names and
 	// slashes cannot select another request. Only the private run copy changes.
+	// The CLI matches owner-prefixed cloud IDs by their bare UUID.
 	selector, _ := document["id"].(string)
+	selector = bareItemID(selector)
 	if selector == "" {
 		selector = rand.Text()
-		document["id"] = selector
 	}
+	document["id"] = selector
 	data, err = yaml.Marshal(document)
 	if err != nil {
 		return nil, err
@@ -155,7 +178,7 @@ func (p *PostmanCollection) Send(ctx context.Context, call Call) (*model.Respons
 		bin = "postman"
 	}
 	args := []string{"collection", "run", copyRoot, "-i", selector, "--working-dir", root, "--no-report-events"}
-	if len(call.Variables) > 0 {
+	{
 		keys := make([]string, 0, len(call.Variables))
 		for key := range call.Variables {
 			keys = append(keys, key)
@@ -204,7 +227,7 @@ func (p *PostmanCollection) Send(ctx context.Context, call Call) (*model.Respons
 	case captured = <-captures:
 	default:
 		if runErr != nil {
-			return nil, fmt.Errorf("Postman collection produced no response: %w", runErr)
+			return nil, fmt.Errorf("Postman collection produced no response: %w\n\n%s", runErr, lastLines(output.String(), 20))
 		}
 		return nil, fmt.Errorf("Postman collection finished without a captured response")
 	}
@@ -229,6 +252,11 @@ func (p *PostmanCollection) Send(ctx context.Context, call Call) (*model.Respons
 		runOutput = "Internal response capture succeeded. Postman CLI reported an error for the internal capture callback; its raw output follows.\n\n" + runOutput
 	}
 	response := &model.Response{StatusCode: captured.Code, Reason: captured.Status, Body: body, Elapsed: time.Duration(captured.Time * float64(time.Millisecond)), ReceivedAt: time.Now(), URL: captured.URL, Method: captured.Method, PostmanRun: &model.PostmanRun{ExitCode: exitCode, Output: runOutput}}
+	select {
+	case values := <-environments:
+		response.PostmanRun.Environment = values
+	default:
+	}
 	for _, h := range captured.Headers {
 		response.Headers = append(response.Headers, model.Header{Name: h.Key, Value: h.Value})
 	}
@@ -243,6 +271,23 @@ func (p *PostmanCollection) Send(ctx context.Context, call Call) (*model.Respons
 	}
 	postmanResponseCookies(response)
 	return response, nil
+}
+
+func lastLines(text string, n int) string {
+	lines := strings.Split(strings.TrimRight(text, "\n"), "\n")
+	if len(lines) > n {
+		lines = lines[len(lines)-n:]
+	}
+	return strings.Join(lines, "\n")
+}
+
+var ownerPrefixedID = regexp.MustCompile(`^[0-9]+-([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$`)
+
+func bareItemID(id string) string {
+	if match := ownerPrefixedID.FindStringSubmatch(id); match != nil {
+		return match[1]
+	}
+	return id
 }
 
 func checkPostmanItemID(root, selected, id string) error {
@@ -266,7 +311,7 @@ func checkPostmanItemID(root, selected, id string) error {
 		if yaml.Unmarshal(data, &item) != nil {
 			return fmt.Errorf("invalid Postman item document")
 		}
-		if item.ID == id {
+		if bareItemID(item.ID) == id {
 			return fmt.Errorf("duplicate Postman item ID; resolve duplicate IDs before sending")
 		}
 		return nil

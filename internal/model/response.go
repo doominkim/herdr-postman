@@ -143,7 +143,10 @@ type Response struct {
 
 type PostmanRun struct {
 	ExitCode int
-	Output string
+	Output   string
+	// Environment is the environment after the run, including values set
+	// by scripts. Nil when the CLI did not export it.
+	Environment map[string]string
 }
 
 // Header returns the first header value matching name case-insensitively.

@@ -150,6 +150,7 @@ func appConfig(root, bin string, environmentFiles ...string) (ui.Config, error) 
 		Environment:         environmentFiles,
 		WatchEnvironment:    settings.WatchEnvFiles,
 		RememberEnvironment: func(files []string) { _ = memory.Remember(root, files) },
+		LocalValues:         env.LocalValues{Dir: filepath.Join(paths.DataDir(), "local-values")},
 		Sender:              &client.PostmanCollection{Binary: bin, Root: root, Render: store.Render},
 		StartupMessages:     messages,
 	}

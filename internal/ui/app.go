@@ -60,6 +60,10 @@ type Config struct {
 	// RememberSession records the session variables whenever they change,
 	// so the next launch can start with them.
 	RememberSession func(vars map[string]string)
+	// LocalValues, when set, keeps each environment's current values on this
+	// machine, like Postman Desktop. Session variables become the active
+	// environment's current values.
+	LocalValues LocalValues
 	// HostVariables are available to every request, below the environment.
 	HostVariables []model.Variable
 	// WatchEnvironment reloads the active environment when its files change.
@@ -143,6 +147,7 @@ type App struct {
 	sessionVars t.AnySignal[map[string]string]
 	// rememberSession, when set, records session variables between runs.
 	rememberSession func(map[string]string)
+	localValues     LocalValues
 
 	sessions      t.AnySignal[[]*Session]
 	active        t.Signal[int] // Session.id of the visible session
@@ -257,6 +262,7 @@ func New(cfg Config) *App {
 		env:             &environments{source: cfg.Environments, active: t.NewAnySignal(model.Environment{}), host: cfg.HostVariables, remember: cfg.RememberEnvironment},
 		sessionVars:     t.NewAnySignal(startupSessionVars(cfg.SessionVariables)),
 		rememberSession: cfg.RememberSession,
+		localValues:     cfg.LocalValues,
 		sessions:        t.NewAnySignal[[]*Session](nil),
 		active:          t.NewSignal(0),
 		sessionView:     newSessionTabsView(),
@@ -722,6 +728,7 @@ func (a *App) start(s *Session, stream *client.Stream) {
 	}
 	s.Send(a.sender, call, func(req model.Request, resp *model.Response, status model.Status) {
 		a.captureResponse(req, resp)
+		a.captureScriptVariables(call.Variables, resp)
 		if req.Kind() == model.GRPCKind {
 			s.payloads[model.KindGRPC].(*grpcEditor).describeCompleted(a, call)
 		}
