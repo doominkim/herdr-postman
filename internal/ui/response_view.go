@@ -15,8 +15,10 @@ import (
 )
 
 const (
-	responseTabsID    = "resp-tabs"
-	responseCopyAllID = "resp-copy-all"
+	responseTabsID      = "resp-tabs"
+	responseCopyAllID   = "resp-copy-all"
+	responseErrorID     = "resp-error"
+	responseCopyErrorID = "resp-copy-error"
 )
 
 type uploadProgress struct {
@@ -93,7 +95,11 @@ func (p responsePanel) Build(ctx t.BuildContext) t.Widget {
 		if err != nil {
 			message = err.Error()
 		}
-		content = emptyState{Title: "Request failed", Lines: []string{"[$Error]" + escapeMarkup(message) + "[/]", "Press [b]" + escapeMarkup(p.app.keyHint("send-request")) + "[/] to try again"}}
+		if p.app.postmanUI {
+			content = p.failure(theme, message)
+		} else {
+			content = emptyState{Title: "Request failed", Lines: []string{"[$Error]" + escapeMarkup(message) + "[/]", "Press [b]" + escapeMarkup(p.app.keyHint("send-request")) + "[/] to try again"}}
+		}
 	case phase == exchangeSending && strings.HasPrefix(s.oauth.status.Get(), "Waiting for OAuth"):
 		content = t.Column{
 			Style:      t.Style{Width: t.Flex(1), Height: t.Flex(1)},
@@ -156,6 +162,12 @@ func (p responsePanel) Build(ctx t.BuildContext) t.Widget {
 		if tabs != nil && len(resp.Body) > 0 && s.responseImage.Get() == nil {
 			actions = append(actions, t.Button{ID: responseCopyAllID, Label: "Copy all", DisableFocus: true, OnPress: func() { p.app.notify(s.copyWholeBody(), toastSuccess) }})
 		}
+		if phase == exchangeFailed {
+			actions = append(actions, t.Button{ID: responseCopyErrorID, Label: "Copy error", DisableFocus: true, OnPress: func() {
+				t.SetClipboard(t.SystemClipboard, s.errorMessage)
+				p.app.notify("Copied error", toastSuccess)
+			}})
+		}
 		return postmanPanel(theme, "Response", tabs, info, content, actions...)
 	}
 	return section{
@@ -167,6 +179,29 @@ func (p responsePanel) Build(ctx t.BuildContext) t.Widget {
 		Width:  t.Flex(1),
 		Height: t.Flex(1),
 		Child:  content,
+	}
+}
+
+// failure shows why the request failed in a read-only text area, so the
+// message (often the tail of the Postman CLI output) can be selected and
+// copied by dragging, like the response body.
+func (p responsePanel) failure(theme t.ThemeData, message string) t.Widget {
+	s := p.session
+	state := s.errorArea(message)
+	area := t.TextArea{
+		ID:          responseErrorID,
+		State:       state,
+		ScrollState: s.errorScroll,
+		Style:       t.Style{Width: t.Flex(1), ForegroundColor: theme.ErrorText, BackgroundColor: theme.Background, Padding: t.EdgeInsetsXY(1, 0)},
+		MouseUp:     func(t.MouseEvent) { p.app.copyDragSelection(state) },
+	}
+	return t.Column{
+		Style: t.Style{Width: t.Flex(1), Height: t.Flex(1)},
+		Children: []t.Widget{
+			t.Text{Content: "Request failed", Style: t.Style{ForegroundColor: theme.Text, Bold: true, Padding: t.EdgeInsetsXY(1, 0)}},
+			scrollingArea(responseErrorID, s.errorScroll, theme.Background, area),
+			t.ParseMarkupToText("[$TextMuted] Press [b]"+escapeMarkup(p.app.keyHint("send-request"))+"[/] to try again[/]", theme),
+		},
 	}
 }
 

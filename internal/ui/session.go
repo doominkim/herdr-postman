@@ -151,6 +151,11 @@ type Session struct {
 	responseJSONTree           t.Signal[bool]
 	responseJSONQuery          *t.TextInputState
 	responseJSONError          t.Signal[string]
+	// errorView is the read-only view of errorMessage, the failure the
+	// response panel shows (see errorArea).
+	errorView    *t.TextAreaState
+	errorScroll  *t.ScrollState
+	errorMessage string
 	// responseVisual is the body viewer's visual mode, where moving selects.
 	responseVisual        t.Signal[bool]
 	responseHeaders       *t.TableState[model.Header]

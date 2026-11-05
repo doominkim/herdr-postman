@@ -2,6 +2,7 @@ package ui
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -85,6 +86,34 @@ func TestPostmanFailedResponseHintsCtrlEnter(tt *testing.T) {
 	screen := p.ScreenText()
 	if !strings.Contains(screen, "ctrl+enter") || strings.Contains(screen, "ctrl+j") {
 		tt.Fatalf("failure hint should name ctrl+enter only:\n%s", screen)
+	}
+}
+
+func TestPostmanFailedResponseErrorCanBeCopied(tt *testing.T) {
+	message := "Postman collection produced no response: exit status 1\n\nnewman: connect ECONNREFUSED 127.0.0.1:8000"
+	app, s := postmanBodyApp(tt, &countingSender{}, "hello")
+	s.err.Set(errors.New(message))
+	s.phase.Set(exchangeFailed)
+	p := t.NewPilot(tt, app, 150, 45)
+	b, ok := p.Bounds(responseErrorID)
+	if !ok {
+		tt.Fatalf("the error is not in a selectable view:\n%s", p.ScreenText())
+	}
+	p.MouseDown(b.X+1, b.Y, uv.MouseLeft, 0)
+	p.MouseMove(b.X+8, b.Y)
+	p.MouseUp(b.X+8, b.Y, uv.MouseLeft, 0)
+	if got := p.Clipboard(); got != "Postman" {
+		tt.Fatalf("drag copied %q, want %q", got, "Postman")
+	}
+	p.Click(responseCopyErrorID)
+	if got := p.Clipboard(); got != message {
+		tt.Fatalf("copy copied %q, want the whole error", got)
+	}
+	// The next failure shows its own message.
+	s.err.Set(errors.New("second failure"))
+	p.Advance(0)
+	if got := p.TextOf(responseErrorID); !strings.Contains(got, "second failure") || strings.Contains(got, "ECONNREFUSED") {
+		tt.Fatalf("the error view shows %q after the next failure", got)
 	}
 }
 

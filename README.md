@@ -16,7 +16,7 @@ The last source, workspace, environment selection, and collapsed collection fold
 
 Edit requests, choose an environment, and inspect the response body, headers, status, timing, and test results. Execution uses Postman CLI, including supported collection authentication and scripts. The interface follows Postman's request and response layout, with keyboard navigation and mouse support.
 
-Press **Ctrl+Enter** to send from any panel. Dragging across the request or response body copies the selection; **Copy all** on the response heading copies the whole response body. To read modified keys such as Ctrl+Enter, herdr-postman turns on the Kitty keyboard protocol; set `TERMA_DISABLE_KITTY_KEYBOARD=1` if your terminal misreads keys with it.
+Press **Ctrl+Enter** to send from any panel. Dragging across the request or response body copies the selection; **Copy all** on the response heading copies the whole response body. When a request fails, the error can be dragged over and copied the same way, and **Copy error** copies all of it. To read modified keys such as Ctrl+Enter, herdr-postman turns on the Kitty keyboard protocol; set `TERMA_DISABLE_KITTY_KEYBOARD=1` if your terminal misreads keys with it.
 
 Click on a variable such as `{{product_id}}` in the URL, a params, headers or form row, or the raw body, or move the cursor onto it, to see its value and source below it. Click the value to change it: **Enter** saves it as the current value, as in the Variables dialog, and **Esc** cancels.
 

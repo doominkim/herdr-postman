@@ -232,6 +232,19 @@ func (a *App) copyDragSelection(area *t.TextAreaState) {
 	a.notify("Copied "+pluralize(utf8.RuneCountInString(text), "character"), toastSuccess)
 }
 
+// errorArea is the read-only view of message, the failure the response panel
+// shows. Each new message gets a fresh view, so the selection and scroll of an
+// earlier failure don't carry over.
+func (s *Session) errorArea(message string) *t.TextAreaState {
+	if s.errorView == nil || s.errorMessage != message {
+		s.errorView = t.NewTextAreaState(message)
+		s.errorView.ReadOnly.Set(true)
+		s.errorScroll = t.NewScrollState()
+		s.errorMessage = message
+	}
+	return s.errorView
+}
+
 // copyWholeBody copies the entire response body, whatever is selected.
 func (s *Session) copyWholeBody() string {
 	resp := s.response.Peek()
