@@ -35,4 +35,12 @@ else
 fi
 if [ -n "${HERDR_POSTMAN_ENVIRONMENT:-}" ]; then set -- "$@" --environment "$HERDR_POSTMAN_ENVIRONMENT"; fi
 set -- "$@" --source choose
+# Herdr keeps right-clicks for its own menu unless the pane asks for them; the
+# collection's request menu needs them. Shift+right-click (or right-clicking
+# the pane frame) still opens Herdr's menu. A failure here only costs the menu.
+if [ -n "${HC_TERMINAL_ID:-}" ]; then
+  "${HERDR_APP_BIN:-herdr-app}" do terminal.right_click --to program --terminal "$HC_TERMINAL_ID" >/dev/null 2>&1 || :
+elif [ -n "${HERDR_PANE_ID:-}" ]; then
+  "${HERDR_BIN_PATH:-herdr}" pane input --pane "$HERDR_PANE_ID" --right-click pane >/dev/null 2>&1 || :
+fi
 exec "$bin" "$@"

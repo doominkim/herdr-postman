@@ -17,6 +17,9 @@ class PluginTests(unittest.TestCase):
         self.app.write_text('#!/usr/bin/env python3\nimport os,json,sys\nwith open(os.environ["TEST_LOG"],"a") as f: f.write(json.dumps(sys.argv[1:])+"\\n")\n')
         self.app.chmod(0o700)
         self.env = dict(os.environ, HERDR_POSTMAN_BIN=str(self.app), POSTMAN_BIN=str(self.app), TEST_LOG=str(self.log), HERDR_POSTMAN_STATE_DIR=str(self.dir/'state'), XDG_DATA_HOME=str(self.dir/'data'))
+        # The tests may themselves run inside a Herdr pane.
+        for name in ['HC_TERMINAL_ID', 'HERDR_PANE_ID']:
+            self.env.pop(name, None)
 
     def test_marketplace_build_hook_builds_app_from_plugin_root(self):
         import tomllib
@@ -75,6 +78,35 @@ class PluginTests(unittest.TestCase):
         result = self.pane(HERDR_POSTMAN_BIN=str(self.dir/'missing'))
         self.assertEqual(result.returncode, 127)
         self.assertEqual(self.calls(), [])
+
+    def router(self, name, status=0):
+        path = self.dir/name
+        path.write_text(f'#!/usr/bin/env python3\nimport os,json,sys\nwith open(os.environ["TEST_LOG"],"a") as f: f.write(json.dumps(["{name}",*sys.argv[1:]])+"\\n")\nsys.exit({status})\n')
+        path.chmod(0o700)
+        return path
+
+    def test_herdr_app_pane_sends_right_clicks_to_the_app(self):
+        result = self.pane(HC_TERMINAL_ID='t6z', HERDR_APP_BIN=str(self.router('herdr-app')))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.calls()[0], ['herdr-app', 'do', 'terminal.right_click', '--to', 'program', '--terminal', 't6z'])
+        self.assertEqual(self.calls()[1][-2:], ['--source', 'choose'])
+
+    def test_herdr_pane_sends_right_clicks_to_the_app(self):
+        result = self.pane(HERDR_PANE_ID='w1:p9', HERDR_BIN_PATH=str(self.router('herdr')))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.calls()[0], ['herdr', 'pane', 'input', '--pane', 'w1:p9', '--right-click', 'pane'])
+        self.assertEqual(self.calls()[1][-2:], ['--source', 'choose'])
+
+    def test_failed_right_click_routing_still_launches(self):
+        result = self.pane(HC_TERMINAL_ID='t6z', HERDR_APP_BIN=str(self.router('herdr-app', status=1)))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.calls()[1][-2:], ['--source', 'choose'])
+
+    def test_outside_herdr_nothing_is_routed(self):
+        herdr_app, herdr = self.router('herdr-app'), self.router('herdr')
+        result = self.pane(HERDR_APP_BIN=str(herdr_app), HERDR_BIN_PATH=str(herdr))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(len(self.calls()), 1)
 
     def toggle(self, panes, focused, workspace="w1"):
         herdr = self.dir/'herdr'

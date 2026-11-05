@@ -20,7 +20,7 @@ Press **Ctrl+Enter** to send from any panel. Dragging across the request or resp
 
 Click on a variable such as `{{product_id}}` in the URL, a params, headers or form row, or the raw body, or move the cursor onto it, to see its value and source below it. Click the value to change it: **Enter** saves it as the current value, as in the Variables dialog, and **Esc** cancels.
 
-Click the request title to rename it; **Enter** saves the new name and nothing else. Right-click a request in the collection to rename, duplicate or delete it.
+Click the request title to rename it; **Enter** saves the new name and nothing else. Right-click a request in the collection to rename, duplicate or delete it. Herdr normally keeps right-clicks for its own menu, so the Postman pane asks Herdr to send them to the app when it starts; Shift+right-click still opens Herdr's menu.
 
 Cloud environments load their values when selected. Environment values override collection defaults; session overrides take precedence. The new Cloud environment cache stores names and IDs, not variable values.
 
