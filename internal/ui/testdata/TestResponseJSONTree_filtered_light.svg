@@ -577,6 +577,7 @@
   <text x="495.2" y="115.8" fill="#7C7F93">Auth</text>
   <text x="545.6" y="115.8" fill="#7C7F93">Info</text>
   <text x="596.0" y="115.8" fill="#7C7F93">Options</text>
+  <text x="671.6" y="115.8" class="bold" fill="#114E52">›</text>
   <rect x="8.0" y="125.6" width="8.4" height="19.6" fill="#E0D3F3"/>
   <rect x="16.4" y="125.6" width="8.4" height="19.6" fill="#E0D3F3"/>
   <rect x="24.8" y="125.6" width="8.4" height="19.6" fill="#E1D4F3"/>

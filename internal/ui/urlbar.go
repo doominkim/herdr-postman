@@ -274,7 +274,7 @@ func (p urlPreview) Build(ctx t.BuildContext) t.Widget {
 	}
 	refs := model.FindVariables(text)
 	if p.app.isNative() {
-		refs = nativeVariableRefs(text)
+		refs = model.FindPostmanVariables(text)
 	}
 	if len(refs) == 0 || !p.app.settings.URLBar.ShowValuePreview {
 		return t.Text{Content: "", Style: style}

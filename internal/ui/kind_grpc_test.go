@@ -85,7 +85,7 @@ func TestGRPCRequestTabs(tt *testing.T) {
 	app := testApp()
 	app.openRequest(grpcRequest())
 	s := app.current()
-	if got, want := tabLabels(s), "Message,Proto,Metadata,Auth,Info,Options"; got != want {
+	if got, want := tabLabels(s), "Message,Proto,Metadata,Auth,Info,Options,Code"; got != want {
 		tt.Fatalf("gRPC tabs = %s, want %s", got, want)
 	}
 	if s.requestTab.Peek() != "grpc-message" {

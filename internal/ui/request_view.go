@@ -74,6 +74,7 @@ func (p requestPanel) Build(ctx t.BuildContext) t.Widget {
 		"auth":    authEditor{session: s, variables: variables, choices: choices},
 		"info":    infoEditor{session: s},
 		"options": optionsEditor{session: s, variables: variables, choices: choices},
+		"code":    codeView{app: p.app, session: s},
 	}
 	views := map[string]t.Widget{}
 	for _, tab := range s.requestTabList() {
@@ -121,6 +122,8 @@ func (s *Session) contentFocusID(tab string) string {
 		id = "req-auth-type"
 	case "options":
 		id = optionRows(s.requestKind())[0]
+	case "code":
+		id = codeCommandID
 	case "body":
 		switch s.bodyType.Peek() {
 		case model.BodyRaw:

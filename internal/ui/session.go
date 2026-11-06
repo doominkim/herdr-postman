@@ -112,6 +112,10 @@ type Session struct {
 	// it by editing, sending or saving it or asking to keep it (see
 	// App.openRequest). A preview tab never has unsaved changes.
 	preview t.Signal[bool]
+	// edits counts changes to the request, loads included, so a view of the
+	// whole request (the Code tab), which reads it through Snapshot without
+	// subscribing, rebuilds when any part changes.
+	edits t.Signal[int]
 
 	requestTab  t.Signal[string]
 	responseTab t.Signal[string]
@@ -156,6 +160,11 @@ type Session struct {
 	errorView    *t.TextAreaState
 	errorScroll  *t.ScrollState
 	errorMessage string
+	// codeView is the read-only view of codeCommand, the command the Code
+	// tab shows (see codeArea).
+	codeView    *t.TextAreaState
+	codeScroll  *t.ScrollState
+	codeCommand string
 	// responseVisual is the body viewer's visual mode, where moving selects.
 	responseVisual        t.Signal[bool]
 	responseHeaders       *t.TableState[model.Header]
@@ -227,6 +236,7 @@ func newSession(id int, req model.Request) *Session {
 		title:             t.NewSignal("Untitled"),
 		dirty:             t.NewSignal(false),
 		preview:           t.NewSignal(false),
+		edits:             t.NewSignal(0),
 		requestTab:        t.NewSignal("headers"),
 		responseTab:       t.NewSignal("body"),
 
@@ -422,6 +432,7 @@ func (s *Session) Load(req model.Request) {
 	s.bodyScroll.SetOffset(0)
 	s.descriptionScroll.SetOffset(0)
 	s.resetURLHistory()
+	s.edits.Set(s.edits.Peek() + 1)
 }
 
 // setKind changes the kind of request the session edits. The kind's first
@@ -470,6 +481,7 @@ func (s *Session) savedAs(req model.Request) {
 func (s *Session) markEdited() {
 	s.dirty.Set(true)
 	s.preview.Set(false)
+	s.edits.Set(s.edits.Peek() + 1)
 }
 
 // urlEdited keeps the query and path parameter tables in step with the URL.

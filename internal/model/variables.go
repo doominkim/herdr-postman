@@ -5,7 +5,8 @@ import (
 	"strings"
 )
 
-// VariableRef is a $NAME, ${NAME} or generated ${$name} reference in a string.
+// VariableRef is a $NAME, ${NAME} or generated ${$name} reference in a
+// string, or a Postman {{name}} one (see FindPostmanVariables).
 type VariableRef struct {
 	Name string
 	// Start and End are byte offsets of the whole reference (including $ and braces).
@@ -90,6 +91,53 @@ func FindBracedVariables(s string) []VariableRef {
 // as written. "$$" still becomes "$".
 func SubstituteBraced(s string, lookup func(name string) (string, bool)) string {
 	return substitute(s, FindBracedVariables(s), lookup)
+}
+
+// FindPostmanVariables returns the {{name}} references in s, the syntax of
+// Postman requests. "$" means nothing there.
+func FindPostmanVariables(s string) []VariableRef {
+	var refs []VariableRef
+	for offset := 0; offset < len(s); {
+		start := strings.Index(s[offset:], "{{")
+		if start < 0 {
+			break
+		}
+		start += offset
+		end := strings.Index(s[start+2:], "}}")
+		if end < 0 {
+			break
+		}
+		end += start + 2
+		name := s[start+2 : end]
+		if name != "" && !strings.ContainsAny(name, "{}\r\n") {
+			refs = append(refs, VariableRef{Name: name, Start: start, End: end + 2})
+		}
+		offset = end + 2
+	}
+	return refs
+}
+
+// SubstitutePostman replaces {{name}} references with values from lookup.
+// Unknown ones are left as written, for Postman to resolve when it runs the
+// request (a script may set them).
+func SubstitutePostman(s string, lookup func(name string) (string, bool)) string {
+	refs := FindPostmanVariables(s)
+	if len(refs) == 0 {
+		return s
+	}
+	var b strings.Builder
+	last := 0
+	for _, ref := range refs {
+		b.WriteString(s[last:ref.Start])
+		if value, ok := lookup(ref.Name); ok {
+			b.WriteString(value)
+		} else {
+			b.WriteString(s[ref.Start:ref.End])
+		}
+		last = ref.End
+	}
+	b.WriteString(s[last:])
+	return b.String()
 }
 
 // IsSensitiveName reports whether a variable name looks like a secret whose

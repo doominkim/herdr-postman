@@ -107,7 +107,7 @@ func TestRequestTabsFollowTheKind(tt *testing.T) {
 	for _, tab := range s.requestTabs().Tabs {
 		labels = append(labels, tab.Label)
 	}
-	want := []string{"Query", "Variables", "Headers", "Path", "Params", "Auth", "Info", "Options"}
+	want := []string{"Query", "Variables", "Headers", "Path", "Params", "Auth", "Info", "Options", "Code"}
 	if !reflect.DeepEqual(labels, want) {
 		tt.Fatalf("GraphQL tabs = %v, want %v", labels, want)
 	}

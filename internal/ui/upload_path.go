@@ -44,20 +44,7 @@ func (a *App) uploadRoot() string {
 
 func (a *App) resolvedUploadPath(s *Session, path string) string {
 	if a.isNative() {
-		values := a.variableValues()
-		var resolved strings.Builder
-		last := 0
-		for _, ref := range nativeVariableRefs(path) {
-			resolved.WriteString(path[last:ref.Start])
-			if value, ok := values[ref.Name]; ok {
-				resolved.WriteString(value)
-			} else {
-				resolved.WriteString(path[ref.Start:ref.End])
-			}
-			last = ref.End
-		}
-		resolved.WriteString(path[last:])
-		return resolved.String()
+		return model.SubstitutePostman(path, model.MapLookup(a.variableValues()))
 	}
 
 	if s.substitute.Checked.Get() {
