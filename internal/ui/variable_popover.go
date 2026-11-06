@@ -48,7 +48,7 @@ func variableAt(graphemes []string, cursor int, native bool) (name string, start
 	text := strings.Join(graphemes, "")
 	refs := model.FindVariables(text)
 	if native {
-		refs = nativeVariableRefs(text)
+		refs = model.FindPostmanVariables(text)
 	}
 	index := byteToGrapheme(graphemes, len(text))
 	for _, ref := range refs {

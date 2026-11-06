@@ -79,6 +79,61 @@ func Resolve(req Request, lookup func(string) (string, bool)) (Request, error) {
 	out.URL += fragment
 	out.Query = nil
 
+	if out.Auth.Type == AuthOAuth2 {
+		for _, value := range oauthFields(&out.Auth.OAuth2) {
+			if missing := undefined(*value, lookup); len(missing) > 0 {
+				return Request{}, UndefinedVariablesError{Names: missing}
+			}
+		}
+	}
+	substituteFields(&out, sub, req.Options.SubstituteBodyVariables)
+	if req.Payload != nil {
+		braced := func(s string) string { return SubstituteBraced(s, lookup) }
+		out.Payload = req.Payload.resolve(braced, sub, req.Options)
+	}
+	return out, nil
+}
+
+// ResolvePostman is Resolve for Postman requests, which reference variables
+// as {{name}}. Known references are filled in from lookup; the rest are left
+// for Postman, which resolves them when it runs the request, so none is an
+// error. The URL is otherwise kept as written: its query isn't re-encoded
+// and no scheme is added. Postman always substitutes the body.
+func ResolvePostman(req Request, lookup func(string) (string, bool)) Request {
+	out := req.Clone()
+	sub := func(s string) string { return SubstitutePostman(s, lookup) }
+	for i := range out.PathParams {
+		out.PathParams[i].Value = sub(out.PathParams[i].Value)
+	}
+	base, query, fragment := splitURL(req.URL)
+	if query == "" {
+		var pairs []string
+		for _, kv := range req.Query {
+			if kv.Enabled {
+				pairs = append(pairs, kv.Name+"="+kv.Value)
+			}
+		}
+		query = strings.Join(pairs, "&")
+	}
+	out.URL = ResolvePathParams(sub(base), out.PathParams)
+	if query != "" {
+		out.URL += "?" + sub(query)
+	}
+	out.URL += fragment
+	out.Query = nil
+	substituteFields(&out, sub, true)
+	if req.Payload != nil {
+		opts := req.Options
+		opts.SubstituteBodyVariables = true
+		out.Payload = req.Payload.resolve(sub, sub, opts)
+	}
+	return out
+}
+
+// substituteFields fills in the variables of out's headers, authentication
+// and proxy, and of its body when body is set. The URL and the kind's
+// payload are the caller's.
+func substituteFields(out *Request, sub func(string) string, body bool) {
 	for i := range out.Headers {
 		if !out.Headers[i].Enabled || out.Headers[i].Name == "" {
 			continue
@@ -93,54 +148,52 @@ func Resolve(req Request, lookup func(string) (string, bool)) (Request, error) {
 	case AuthBearer:
 		out.Auth.Token = sub(out.Auth.Token)
 	case AuthOAuth2:
-		o := &out.Auth.OAuth2
-		fields := []*string{&o.TokenURL, &o.ClientID, &o.ClientSecret, &o.Scope}
-		if o.WithDefaults().GrantType == "authorization_code" {
-			fields = append(fields, &o.AuthorizationURL, &o.RedirectURI)
-		}
-		for _, value := range fields {
-			if missing := undefined(*value, lookup); len(missing) > 0 {
-				return Request{}, UndefinedVariablesError{Names: missing}
-			}
+		for _, value := range oauthFields(&out.Auth.OAuth2) {
 			*value = sub(*value)
 		}
 	}
 	out.Options.ProxyURL = sub(out.Options.ProxyURL)
-	if req.Options.SubstituteBodyVariables {
-		switch req.Body.Type {
-		case BodyRaw:
-			out.Body.Raw = sub(out.Body.Raw)
-		case BodyFile:
-			out.Body.File = sub(out.Body.File)
-			out.Body.ContentType = sub(out.Body.ContentType)
-		case BodyForm:
-			for i := range out.Body.Form {
-				field := &out.Body.Form[i]
-				if field.Enabled && field.Name != "" {
-					field.Name, field.Value = sub(field.Name), sub(field.Value)
-				}
-			}
-		case BodyMultipart:
-			for i := range out.Body.Multipart {
-				p := &out.Body.Multipart[i]
-				if !p.Enabled {
-					continue
-				}
-				p.Name = sub(p.Name)
-				if p.Type == PartFile {
-					p.File = sub(p.File)
-				} else {
-					p.Value = sub(p.Value)
-				}
-				p.Filename, p.ContentType = sub(p.Filename), sub(p.ContentType)
+	if !body {
+		return
+	}
+	switch out.Body.Type {
+	case BodyRaw:
+		out.Body.Raw = sub(out.Body.Raw)
+	case BodyFile:
+		out.Body.File = sub(out.Body.File)
+		out.Body.ContentType = sub(out.Body.ContentType)
+	case BodyForm:
+		for i := range out.Body.Form {
+			field := &out.Body.Form[i]
+			if field.Enabled && field.Name != "" {
+				field.Name, field.Value = sub(field.Name), sub(field.Value)
 			}
 		}
+	case BodyMultipart:
+		for i := range out.Body.Multipart {
+			p := &out.Body.Multipart[i]
+			if !p.Enabled {
+				continue
+			}
+			p.Name = sub(p.Name)
+			if p.Type == PartFile {
+				p.File = sub(p.File)
+			} else {
+				p.Value = sub(p.Value)
+			}
+			p.Filename, p.ContentType = sub(p.Filename), sub(p.ContentType)
+		}
 	}
-	if req.Payload != nil {
-		braced := func(s string) string { return SubstituteBraced(s, lookup) }
-		out.Payload = req.Payload.resolve(braced, sub, req.Options)
+}
+
+// oauthFields are the OAuth 2.0 settings that may hold variables: those the
+// grant uses.
+func oauthFields(o *OAuth2) []*string {
+	fields := []*string{&o.TokenURL, &o.ClientID, &o.ClientSecret, &o.Scope}
+	if o.WithDefaults().GrantType == "authorization_code" {
+		fields = append(fields, &o.AuthorizationURL, &o.RedirectURI)
 	}
-	return out, nil
+	return fields
 }
 
 // splitURL separates the query string and fragment from the rest of a URL.

@@ -173,7 +173,8 @@ var sharedTabs = []struct {
 }
 
 // requestTabList is the request panel's tabs for the session's kind: the
-// kind's own, then the shared tabs for the fields it uses.
+// kind's own, then the shared tabs for the fields it uses, then Code for the
+// kinds that export as a command.
 func (s *Session) requestTabList() []requestTab {
 	kind := s.requestKind()
 	var tabs []requestTab
@@ -191,9 +192,12 @@ func (s *Session) requestTabList() []requestTab {
 		}
 		tabs = append(tabs, tab)
 	}
+	if view.export.format != nil {
+		tabs = append(tabs, requestTab{key: "code", jump: "p", label: "Code"})
+	}
 	if s.postmanUI {
 		labels := map[string]string{"query": "Params", "auth": "Authorization", "options": "Settings", "info": "Docs"}
-		order := map[string]int{"query": 1, "auth": 2, "headers": 3, "body": 4, "options": 6, "info": 7, "path": 8}
+		order := map[string]int{"query": 1, "auth": 2, "headers": 3, "body": 4, "options": 6, "info": 7, "path": 8, "code": 9}
 		for i := range tabs {
 			if label, ok := labels[tabs[i].key]; ok {
 				tabs[i].label = label

@@ -113,25 +113,51 @@ func (a *App) exportCommand(resolve bool) (string, error) {
 		return "", nil
 	}
 	req := s.Snapshot()
+	if err := exportable(req); err != nil {
+		return "", err
+	}
+	req, err := a.exportedRequest(req, resolve)
+	if err != nil {
+		return "", err
+	}
+	return a.formatExport(req)
+}
+
+// exportable reports why req can't be exported as a command, if it can't.
+func exportable(req model.Request) error {
 	if req.Auth.Type == model.AuthOAuth2 {
-		return "", errors.New("OAuth tokens aren't exported; use Posting to send this request, or export its YAML configuration")
+		return errors.New("OAuth tokens aren't exported; use Posting to send this request, or export its YAML configuration")
 	}
-	if resolve {
-		variables, err := a.requestVariableValues(req)
-		if err != nil {
-			return "", err
-		}
-		resolved, err := model.Resolve(req, model.MapLookup(variables))
-		if err != nil {
-			return "", err
-		}
-		req = resolved
+	if kindViews[req.Kind().ID].export.format == nil {
+		return errors.New("this request kind can only be exported as YAML")
 	}
-	format := kindViews[req.Kind().ID].export.format
-	if format == nil {
-		return "", errors.New("this request kind can only be exported as YAML")
+	return nil
+}
+
+// exportedRequest is req as an export shows it: with the variables' values
+// filled in when resolve is set. A Postman request's {{name}} references
+// take the values Postman would give them, collection variables included;
+// the ones only Postman knows (set by a script, say) are left in.
+func (a *App) exportedRequest(req model.Request, resolve bool) (model.Request, error) {
+	if !resolve {
+		return req, nil
 	}
-	return format(a, req)
+	if a.isNative() {
+		return model.ResolvePostman(req, model.MapLookup(a.variableValuesPeek())), nil
+	}
+	variables, err := a.requestVariableValues(req)
+	if err != nil {
+		return model.Request{}, err
+	}
+	return model.Resolve(req, model.MapLookup(variables))
+}
+
+// formatExport writes req, already resolved or not, as an exportTool command.
+func (a *App) formatExport(req model.Request) (string, error) {
+	if err := exportable(req); err != nil {
+		return "", err
+	}
+	return kindViews[req.Kind().ID].export.format(a, req)
 }
 
 // copyExport copies the request as a command and shows it.

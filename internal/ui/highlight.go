@@ -35,7 +35,7 @@ func span(index []int, start, end int, style t.SpanStyle) t.TextHighlight {
 // red when they don't.
 func variableHighlights(theme t.ThemeData, text string, index []int, resolve func(string) bool, native ...bool) []t.TextHighlight {
 	if len(native) > 0 && native[0] {
-		refs := nativeVariableRefs(text)
+		refs := model.FindPostmanVariables(text)
 		highlights := refHighlights(theme, refs, index, nil)
 		for i, ref := range refs {
 			if resolve != nil && !resolve(ref.Name) {
@@ -201,26 +201,4 @@ func languageFor(contentType string) string {
 		return "yaml"
 	}
 	return ""
-}
-
-func nativeVariableRefs(text string) []model.VariableRef {
-	var refs []model.VariableRef
-	for offset := 0; offset < len(text); {
-		start := strings.Index(text[offset:], "{{")
-		if start < 0 {
-			break
-		}
-		start += offset
-		end := strings.Index(text[start+2:], "}}")
-		if end < 0 {
-			break
-		}
-		end += start + 2
-		name := text[start+2 : end]
-		if name != "" && !strings.ContainsAny(name, "{}\r\n") {
-			refs = append(refs, model.VariableRef{Name: name, Start: start, End: end + 2})
-		}
-		offset = end + 2
-	}
-	return refs
 }
