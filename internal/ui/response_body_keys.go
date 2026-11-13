@@ -251,7 +251,7 @@ func (s *Session) copyWholeBody() string {
 	if resp == nil {
 		return ""
 	}
-	t.SetClipboard(t.SystemClipboard, formatBody(resp, s.prettifyJSON))
+	t.SetClipboard(t.SystemClipboard, s.bodyText(resp))
 	return "Copied response body"
 }
 

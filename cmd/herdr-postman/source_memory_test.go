@@ -4,7 +4,27 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/darrenburns/posting/v3/internal/ui"
 )
+
+func TestResponseViewMemory(t *testing.T) {
+	file := filepath.Join(t.TempDir(), "state", "response-view.json")
+	if readResponseView(file) != nil {
+		t.Fatal("a view was restored before any was chosen")
+	}
+	saved := ui.ResponseView{Tree: true}
+	if err := writePrivateJSON(file, saved); err != nil {
+		t.Fatal(err)
+	}
+	if got := readResponseView(file); got == nil || *got != saved {
+		t.Fatalf("restored %v, want %v", got, saved)
+	}
+	os.WriteFile(file, []byte("{"), 0600)
+	if readResponseView(file) != nil {
+		t.Fatal("a damaged file should fall back to the setting")
+	}
+}
 
 func TestSourceMemoryRoundTripAndPrivateFile(t *testing.T) {
 	file := filepath.Join(t.TempDir(), "state", "source.json")

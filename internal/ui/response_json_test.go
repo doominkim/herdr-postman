@@ -1,17 +1,33 @@
 package ui
 
 import (
+	"slices"
 	"strings"
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	t "github.com/darrenburns/terma"
 
 	"github.com/darrenburns/posting/v3/internal/model"
 )
 
+// clickTreeRow clicks the response tree row showing label, away from its
+// expand indicator.
+func clickTreeRow(tt *testing.T, p *t.Pilot, label string) {
+	tt.Helper()
+	bounds, _ := p.Bounds("resp-body")
+	for y, row := range strings.Split(p.TextOf("resp-body"), "\n") {
+		if i := strings.Index(row, label); i >= 0 {
+			p.ClickAt(bounds.X+utf8.RuneCountInString(row[:i])+1, bounds.Y+y)
+			return
+		}
+	}
+	tt.Fatalf("no tree row %q:\n%s", label, p.TextOf("resp-body"))
+}
+
 func TestResponseJSONTree(tt *testing.T) {
-	const body = `{"users":[{"id":9007199254740993,"name":"Ada"},{"id":2,"name":"Grace"}],"page":1}`
+	const body = `{"page":1,"data":[{"product":{"name":"Ada","id":9007199254740993},"funding":null},{"product":{"name":"Grace","id":2}}]}`
 	app, s := bodyApp(tt, "application/json", body)
 	p := t.NewPilot(tt, app, snapW, snapH)
 	p.Click("resp-body")
@@ -20,23 +36,50 @@ func TestResponseJSONTree(tt *testing.T) {
 	p.Press("up")
 	searchBounds, _ := p.Bounds(responseSearchID)
 	textCursor := s.responseBody.CursorIndex.Peek()
-	p.Click("resp-body-json")
-	if p.FocusedID() != "resp-body" || !strings.Contains(p.TextOf("resp-body"), "9007199254740993") {
-		tt.Fatalf("JSON tree did not open with focus:\n%s", p.ScreenText())
+	p.Click(tabID(responseBodyViewID, "tree"))
+	got := p.TextOf("resp-body")
+	if p.FocusedID() != "resp-body" || !strings.Contains(got, "page: 1") || !strings.Contains(got, "data (2)") {
+		tt.Fatalf("JSON tree did not open with focus and counts:\n%s", p.ScreenText())
+	}
+	if strings.Contains(got, "product") || strings.Contains(got, "$") {
+		tt.Fatalf("the tree should open with only the top level showing:\n%s", got)
+	}
+	if strings.Index(got, "page") > strings.Index(got, "data") {
+		tt.Fatalf("keys lost the response's order:\n%s", got)
 	}
 	if bounds, ok := p.Bounds(responseJSONQueryID); !ok || bounds.Y != searchBounds.Y {
 		tt.Fatalf("JSONPath bar is on row %d, want Find's row %d", bounds.Y, searchBounds.Y)
 	}
-	p.AssertSnapshot("tree", "JSON tree with a JSONPath input, syntax-coloured values and a switch back to the text view")
-	p.Press("home", "left")
-	if strings.Contains(p.TextOf("resp-body"), "Ada") {
-		tt.Fatal("collapsing the root did not hide its children")
+	clickTreeRow(tt, p, "data (2)")
+	got = p.TextOf("resp-body")
+	if !strings.Contains(got, "[0] {product: {…}, funding: null}") || !strings.Contains(got, "[1] {product: {…}}") || strings.Contains(got, "Ada") {
+		tt.Fatalf("clicking a row should open just that level, previewing closed objects:\n%s", got)
 	}
-	p.Press("right", "ctrl+f")
+	clickTreeRow(tt, p, "[0] {product")
+	got = p.TextOf("resp-body")
+	if !strings.Contains(got, "[0] {2}") || !strings.Contains(got, `product {name: "Ada", id: 9007199254740993}`) {
+		tt.Fatalf("an open object should show its size and its closed children a preview:\n%s", got)
+	}
+	clickTreeRow(tt, p, "product {name")
+	got = p.TextOf("resp-body")
+	if !strings.Contains(got, `name: "Ada"`) || !strings.Contains(got, "funding: null") || strings.Index(got, "name") > strings.Index(got, "id:") {
+		tt.Fatalf("nested rows are missing or reordered:\n%s", got)
+	}
+	p.AssertSnapshot("tree", "JSON tree opened by clicking rows, in response order, with counts and a Pretty/Raw/Tree switch")
+	clickTreeRow(tt, p, "data (2)")
+	if strings.Contains(p.TextOf("resp-body"), "[0]") {
+		tt.Fatal("clicking an open row should close it")
+	}
+	p.Press("home", "down", "right", "down", "y")
+	if got := p.Clipboard(); got != "{\n  \"product\": {\n    \"name\": \"Ada\",\n    \"id\": 9007199254740993\n  },\n  \"funding\": null\n}" {
+		tt.Fatalf("copy value lost order or number precision: %q", got)
+	}
+	app.toasts.Clear()
+	p.Press("ctrl+f")
 	if p.FocusedID() != responseJSONQueryID {
 		tt.Fatal("ctrl+f should focus JSONPath in tree mode")
 	}
-	p.Type("$.users[1].name")
+	p.Type("$.data[1].product.name")
 	if got := strings.TrimSpace(p.TextOf(responseJSONQueryID + "-count")); got != "1 match" {
 		tt.Fatalf("query count = %q", got)
 	}
@@ -48,11 +91,11 @@ func TestResponseJSONTree(tt *testing.T) {
 		tt.Fatalf("copy value = %q", got)
 	}
 	p.Press("Y")
-	if got := p.Clipboard(); got != "$['users'][1]['name']" {
+	if got := p.Clipboard(); got != "$['data'][1]['product']['name']" {
 		tt.Fatalf("copy path = %q", got)
 	}
 	app.toasts.Clear() // The copy notifications overlay the bottom search bar.
-	if got := strings.TrimSpace(p.TextOf("resp-json-path")); got != "$['users'][1]['name']" {
+	if got := strings.TrimSpace(p.TextOf("resp-json-path")); got != "$['data'][1]['product']['name']" {
 		tt.Fatalf("cursor path = %q", got)
 	}
 	p.Press("/", "end")
@@ -69,11 +112,16 @@ func TestResponseJSONTree(tt *testing.T) {
 		tt.Fatalf("an empty result should be explicit:\n%s", p.ScreenText())
 	}
 	p.Press("enter", "y")
-	if p.Clipboard() != "$['users'][1]['name']" {
+	if p.Clipboard() != "$['data'][1]['product']['name']" {
 		tt.Fatal("copy with no results should leave the clipboard alone")
 	}
-	p.Press("escape", "/")
-	p.Type("$.users[*].id")
+	p.Press("ctrl+f", "ctrl+a")
+	p.Type("$")
+	if got := p.TextOf("resp-body"); strings.TrimSpace(p.TextOf(responseJSONQueryID+"-count")) != "1 match" || !strings.Contains(got, "page: 1") || !strings.Contains(got, "data (2)") {
+		tt.Fatalf("matching the whole document should show every top-level row:\n%s", got)
+	}
+	p.Press("ctrl+a")
+	p.Type("$.data[*].product.id")
 	if got := strings.TrimSpace(p.TextOf(responseJSONQueryID + "-count")); got != "2 matches" {
 		tt.Fatalf("query count = %q", got)
 	}
@@ -90,21 +138,58 @@ func TestResponseJSONTree(tt *testing.T) {
 		tt.Fatalf("text view copy = %q", got)
 	}
 	p.Press("t", "/")
-	p.Type("$.users[1].name")
+	p.Type("$.data[1].product.name")
 	p.Resize(82, snapH)
 	t.SetTheme("catppuccin-latte")
 	app.toasts.Clear()
 	p.AssertSnapshot("filtered_light", "Narrow light-theme JSONPath results retain ancestors and the original array index")
-	p.Click("resp-body-text")
-	if p.FocusedID() != "resp-body" || !strings.Contains(p.TextOf("resp-body"), `"users": [`) {
-		tt.Fatal("clicking Text view should restore the focused text body")
+	p.Click(tabID(responseBodyViewID, "pretty"))
+	if p.FocusedID() != "resp-body" || !strings.Contains(p.TextOf("resp-body"), `"data": [`) {
+		tt.Fatal("clicking Pretty should restore the focused text body")
+	}
+}
+
+func TestResponseBodyRawAndPretty(tt *testing.T) {
+	const body = `{"page":1,"data":[{"id":2}]}`
+	// Misleading content types still offer the JSON views.
+	app, s := bodyApp(tt, "text/plain", body)
+	p := t.NewPilot(tt, app, snapW, snapH)
+	if got := p.TextOf("resp-body"); !strings.Contains(got, `"page": 1`) {
+		tt.Fatalf("JSON should open pretty-printed:\n%s", got)
+	}
+	p.Click(tabID(responseBodyViewID, "raw"))
+	if got := strings.TrimSpace(p.TextOf("resp-body")); got != body || p.FocusedID() != "resp-body" {
+		tt.Fatalf("Raw should show the body exactly as received:\n%s", got)
+	}
+	app.copyResponseBody()
+	if got := p.Clipboard(); got != body {
+		tt.Fatalf("copying the whole body in Raw = %q", got)
+	}
+	p.Press("t", "t")
+	if got := strings.TrimSpace(p.TextOf("resp-body")); got != body {
+		tt.Fatalf("leaving the tree should return to Raw:\n%s", got)
+	}
+	resp := fixedResponse()
+	resp.Body = []byte(`{"next":true}`)
+	s.showResponse(resp, nil)
+	if got := strings.TrimSpace(p.TextOf("resp-body")); got != `{"next":true}` {
+		tt.Fatalf("the next response should stay in Raw:\n%s", got)
+	}
+	p.Click(tabID(responseBodyViewID, "pretty"))
+	if got := p.TextOf("resp-body"); !strings.Contains(got, `"next": true`) {
+		tt.Fatalf("Pretty should indent again:\n%s", got)
+	}
+	resp.Body = []byte("plain text")
+	s.showResponse(resp, nil)
+	if _, ok := p.Bounds(responseBodyViewID); ok {
+		tt.Fatal("a body that isn't JSON has no Pretty/Raw/Tree switch")
 	}
 }
 
 func TestResponseJSONReplacementAndSessions(tt *testing.T) {
 	app, first := bodyApp(tt, "application/problem+json", `{"old":"first"}`)
 	p := t.NewPilot(tt, app, snapW, snapH)
-	p.Click("resp-body-json")
+	p.Click(tabID(responseBodyViewID, "tree"))
 	p.Press("/")
 	p.Type("$.old")
 	p.Press("enter")
@@ -113,8 +198,8 @@ func TestResponseJSONReplacementAndSessions(tt *testing.T) {
 	second.phase.Set(exchangeDone)
 	t.RequestFocus("resp-body")
 	p.Advance(0)
-	if _, ok := p.Bounds(responseJSONQueryID); ok {
-		tt.Fatal("a new request tab inherited the tree view")
+	if _, ok := p.Bounds(responseJSONQueryID); !ok || strings.Contains(p.TextOf(responseJSONQueryID), "$.old") {
+		tt.Fatal("a new request tab should open in the tree view, without another tab's query")
 	}
 	p.Press("alt+left")
 	if app.current() != first || !strings.Contains(p.TextOf(responseJSONQueryID), "$.old") {
@@ -131,7 +216,7 @@ func TestResponseJSONReplacementAndSessions(tt *testing.T) {
 		resp.Body = []byte(body)
 		first.showResponse(resp, nil)
 		p.Advance(0)
-		if _, ok := p.Bounds("resp-body-json"); ok {
+		if _, ok := p.Bounds(tabID(responseBodyViewID, "tree")); ok {
 			tt.Fatalf("offered a JSON tree for %q", body)
 		}
 		if _, ok := p.Bounds(responseJSONQueryID); ok {
@@ -148,13 +233,89 @@ func TestResponseJSONReplacementAndSessions(tt *testing.T) {
 		entry := sentEntry(1, sampleRequest(tt, "List users"), resp, time.Now())
 		first.showResponse(resp, &entry)
 		p.Advance(0)
-		p.Click("resp-body-json")
+		p.Click(tabID(responseBodyViewID, "tree"))
 		p.Press("home", "y")
 		if got := p.Clipboard(); got != body {
 			tt.Fatalf("history scalar copy = %q, want %q", got, body)
 		}
 		app.toasts.Clear()
 		p.Press("t")
+	}
+}
+
+func TestResponseJSONObjectPreview(tt *testing.T) {
+	state, err := newJSONTreeState([]byte(`[{"id":1,"description":"a description far too long to show in full here","tags":["a"],"meta":{},"list":[],"more":true}, {"a b ":1}, {}]`))
+	if err != nil {
+		tt.Fatal(err)
+	}
+	rows := state.Tree.Nodes.Peek()
+	want := `{id: 1, description: "a description far…", tags: […], …}`
+	if got := rows[0].Data.Preview; got != want {
+		tt.Fatalf("preview = %q, want %q", got, want)
+	}
+	if got := rows[1].Data.Preview; got != `{"a b ": 1}` {
+		tt.Fatalf("awkward keys should be quoted in previews too: %q", got)
+	}
+	if got := rows[2].Data.Preview; got != "" {
+		tt.Fatalf("an empty object has nothing to preview: %q", got)
+	}
+}
+
+func TestResponseViewIsSharedAndRemembered(tt *testing.T) {
+	const body = `{"page":1}`
+	var remembered []ResponseView
+	app := New(Config{RememberResponseView: func(view ResponseView) { remembered = append(remembered, view) }})
+	show := func(s *Session, body string) {
+		resp := fixedResponse()
+		resp.Body = []byte(body)
+		s.showResponse(resp, nil)
+		s.phase.Set(exchangeDone)
+	}
+	first := app.openSession(sampleRequest(tt, "List users"))
+	show(first, body)
+	p := t.NewPilot(tt, app, snapW, snapH)
+	p.Click(tabID(responseBodyViewID, "raw"))
+	second := app.openSession(sampleRequest(tt, "Create user"))
+	show(second, body)
+	if got := strings.TrimSpace(p.TextOf("resp-body")); got != body {
+		tt.Fatalf("a new tab should open in Raw too:\n%s", got)
+	}
+	p.Click(tabID(responseBodyViewID, "pretty"))
+	p.Press("alt+left")
+	if app.current() != first || !strings.Contains(p.TextOf("resp-body"), `"page": 1`) {
+		tt.Fatalf("the other tab should follow the switch to Pretty:\n%s", p.TextOf("resp-body"))
+	}
+	p.Click(tabID(responseBodyViewID, "tree"))
+	show(first, "plain text")
+	if !strings.Contains(p.TextOf("resp-body"), "plain text") {
+		tt.Fatal("a body that isn't JSON should still show as text")
+	}
+	show(first, body)
+	if !strings.Contains(p.TextOf("resp-body"), "page: 1") {
+		tt.Fatalf("the tree should come back for the next JSON body:\n%s", p.TextOf("resp-body"))
+	}
+	want := []ResponseView{{Pretty: false}, {Pretty: true}, {Pretty: true, Tree: true}}
+	if !slices.Equal(remembered, want) {
+		tt.Fatalf("remembered %v, want %v", remembered, want)
+	}
+}
+
+func TestResponseViewRestoredOnStart(tt *testing.T) {
+	const body = `{"page":1}`
+	app := New(Config{ResponseView: &ResponseView{Pretty: false, Tree: true}})
+	s := app.openSession(sampleRequest(tt, "List users"))
+	resp := fixedResponse()
+	resp.Body = []byte(body)
+	s.showResponse(resp, nil)
+	s.phase.Set(exchangeDone)
+	p := t.NewPilot(tt, app, snapW, snapH)
+	if !strings.Contains(p.TextOf("resp-body"), "page: 1") {
+		tt.Fatalf("a restart should open in the remembered view:\n%s", p.ScreenText())
+	}
+	p.Click("resp-body")
+	p.Press("t")
+	if got := strings.TrimSpace(p.TextOf("resp-body")); got != body {
+		tt.Fatalf("leaving the remembered tree should return to Raw:\n%s", got)
 	}
 }
 

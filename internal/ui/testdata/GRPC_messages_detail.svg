@@ -3111,12 +3111,12 @@
   <rect x="680.0" y="654.8" width="8.4" height="19.6" fill="#0F0F1F"/>
   <rect x="688.4" y="654.8" width="8.4" height="19.6" fill="#0F0F1F"/>
   <rect x="209.60" y="654.80" width="1.05" height="19.60" fill="#26203E"/>
-  <text x="234.8" y="664.6" fill="#FAAFD5">application/json</text>
-  <text x="386.0" y="664.6" fill="#9A96BE">3</text>
-  <text x="402.8" y="664.6" fill="#9A96BE">l</text>
-  <text x="428.0" y="664.6" fill="#9A96BE">1:1</text>
-  <text x="470.0" y="664.6" fill="#FAAFD5">JSON</text>
-  <text x="512.0" y="664.6" fill="#FAAFD5">tree</text>
+  <text x="243.2" y="664.6" class="bold" fill="#F5F5F6">Pretty</text>
+  <path d="M 243.20 672.90 H 293.60" fill="none" stroke="#FF69B4" stroke-width="1.00"/>
+  <text x="310.4" y="664.6" fill="#9A96BE">Raw</text>
+  <text x="352.4" y="664.6" fill="#9A96BE">Tree</text>
+  <text x="411.2" y="664.6" fill="#FAAFD5">application</text>
+  <text x="520.4" y="664.6" fill="#9A96BE">1:1</text>
   <text x="562.4" y="664.6" fill="#9A96BE">wrap</text>
   <text x="604.4" y="664.6" fill="#9A96BE">on</text>
   <text x="638.0" y="664.6" fill="#9A96BE">copy</text>

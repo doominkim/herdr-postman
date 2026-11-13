@@ -4824,14 +4824,14 @@
   <rect x="310.4" y="674.4" width="8.4" height="19.6" fill="#0F0F1F"/>
   <rect x="318.8" y="674.4" width="8.4" height="19.6" fill="#0F0F1F"/>
   <rect x="327.2" y="674.4" width="8.4" height="19.6" fill="#1E1E3F"/>
-  <rect x="335.6" y="674.4" width="8.4" height="19.6" fill="#FF69B4"/>
-  <rect x="344.0" y="674.4" width="8.4" height="19.6" fill="#FF69B4"/>
-  <rect x="352.4" y="674.4" width="8.4" height="19.6" fill="#FF69B4"/>
-  <rect x="360.8" y="674.4" width="8.4" height="19.6" fill="#FF69B4"/>
-  <rect x="369.2" y="674.4" width="8.4" height="19.6" fill="#FF69B4"/>
-  <rect x="377.6" y="674.4" width="8.4" height="19.6" fill="#FF69B4"/>
-  <rect x="386.0" y="674.4" width="8.4" height="19.6" fill="#FF69B4"/>
-  <rect x="394.4" y="674.4" width="8.4" height="19.6" fill="#FF69B4"/>
+  <rect x="335.6" y="674.4" width="8.4" height="19.6" fill="#1E1E3F"/>
+  <rect x="344.0" y="674.4" width="8.4" height="19.6" fill="#1E1E3F"/>
+  <rect x="352.4" y="674.4" width="8.4" height="19.6" fill="#1E1E3F"/>
+  <rect x="360.8" y="674.4" width="8.4" height="19.6" fill="#1E1E3F"/>
+  <rect x="369.2" y="674.4" width="8.4" height="19.6" fill="#1E1E3F"/>
+  <rect x="377.6" y="674.4" width="8.4" height="19.6" fill="#1E1E3F"/>
+  <rect x="386.0" y="674.4" width="8.4" height="19.6" fill="#1E1E3F"/>
+  <rect x="394.4" y="674.4" width="8.4" height="19.6" fill="#1E1E3F"/>
   <rect x="402.8" y="674.4" width="8.4" height="19.6" fill="#1E1E3F"/>
   <rect x="411.2" y="674.4" width="8.4" height="19.6" fill="#1E1E3F"/>
   <rect x="419.6" y="674.4" width="8.4" height="19.6" fill="#1E1E3F"/>
@@ -4845,14 +4845,14 @@
   <rect x="486.8" y="674.4" width="8.4" height="19.6" fill="#1E1E3F"/>
   <rect x="495.2" y="674.4" width="8.4" height="19.6" fill="#1E1E3F"/>
   <rect x="503.6" y="674.4" width="8.4" height="19.6" fill="#1E1E3F"/>
-  <rect x="512.0" y="674.4" width="8.4" height="19.6" fill="#1E1E3F"/>
-  <rect x="520.4" y="674.4" width="8.4" height="19.6" fill="#1E1E3F"/>
-  <rect x="528.8" y="674.4" width="8.4" height="19.6" fill="#1E1E3F"/>
-  <rect x="537.2" y="674.4" width="8.4" height="19.6" fill="#1E1E3F"/>
-  <rect x="545.6" y="674.4" width="8.4" height="19.6" fill="#1E1E3F"/>
-  <rect x="554.0" y="674.4" width="8.4" height="19.6" fill="#1E1E3F"/>
-  <rect x="562.4" y="674.4" width="8.4" height="19.6" fill="#1E1E3F"/>
-  <rect x="570.8" y="674.4" width="8.4" height="19.6" fill="#1E1E3F"/>
+  <rect x="512.0" y="674.4" width="8.4" height="19.6" fill="#FF69B4"/>
+  <rect x="520.4" y="674.4" width="8.4" height="19.6" fill="#FF69B4"/>
+  <rect x="528.8" y="674.4" width="8.4" height="19.6" fill="#FF69B4"/>
+  <rect x="537.2" y="674.4" width="8.4" height="19.6" fill="#FF69B4"/>
+  <rect x="545.6" y="674.4" width="8.4" height="19.6" fill="#FF69B4"/>
+  <rect x="554.0" y="674.4" width="8.4" height="19.6" fill="#FF69B4"/>
+  <rect x="562.4" y="674.4" width="8.4" height="19.6" fill="#FF69B4"/>
+  <rect x="570.8" y="674.4" width="8.4" height="19.6" fill="#FF69B4"/>
   <rect x="579.2" y="674.4" width="8.4" height="19.6" fill="#1E1E3F"/>
   <rect x="587.6" y="674.4" width="8.4" height="19.6" fill="#1E1E3F"/>
   <rect x="596.0" y="674.4" width="8.4" height="19.6" fill="#1E1E3F"/>
@@ -4916,13 +4916,15 @@
   <rect x="1083.2" y="674.4" width="8.4" height="19.6" fill="#0F0F1F"/>
   <rect x="1091.6" y="674.4" width="8.4" height="19.6" fill="#0F0F1F"/>
   <rect x="310.40" y="674.40" width="1.05" height="19.60" fill="#241E3A"/>
-  <text x="344.0" y="684.2" class="bold" fill="#0F0F1F">VISUAL</text>
-  <text x="419.6" y="684.2" fill="#FAAFD5">application/json</text>
-  <text x="570.8" y="684.2" fill="#9A96BE">9</text>
-  <text x="587.6" y="684.2" fill="#9A96BE">lines</text>
-  <text x="822.8" y="684.2" fill="#9A96BE">5:20</text>
-  <text x="873.2" y="684.2" fill="#FAAFD5">JSON</text>
-  <text x="915.2" y="684.2" fill="#FAAFD5">tree</text>
+  <text x="344.0" y="684.2" class="bold" fill="#F5F5F6">Pretty</text>
+  <path d="M 344.00 692.50 H 394.40" fill="none" stroke="#FF69B4" stroke-width="1.00"/>
+  <text x="411.2" y="684.2" fill="#9A96BE">Raw</text>
+  <text x="453.2" y="684.2" fill="#9A96BE">Tree</text>
+  <text x="520.4" y="684.2" class="bold" fill="#0F0F1F">VISUAL</text>
+  <text x="596.0" y="684.2" fill="#FAAFD5">application/json</text>
+  <text x="747.2" y="684.2" fill="#9A96BE">9</text>
+  <text x="764.0" y="684.2" fill="#9A96BE">lines</text>
+  <text x="915.2" y="684.2" fill="#9A96BE">5:20</text>
   <text x="965.6" y="684.2" fill="#9A96BE">wrap</text>
   <text x="1007.6" y="684.2" fill="#9A96BE">on</text>
   <text x="1041.2" y="684.2" fill="#9A96BE">copy</text>

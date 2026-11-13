@@ -204,7 +204,7 @@ func (a *App) copyResponseBody() {
 	}
 	// The command copies the entire response, even while a stream's
 	// inspector is showing only one message. Its own copy key copies that.
-	t.SetClipboard(t.SystemClipboard, formatBody(s.response.Peek(), s.prettifyJSON))
+	t.SetClipboard(t.SystemClipboard, s.bodyText(s.response.Peek()))
 	a.notify("Copied response body", toastSuccess)
 }
 

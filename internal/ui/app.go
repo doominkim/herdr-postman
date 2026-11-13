@@ -60,6 +60,12 @@ type Config struct {
 	// RememberSession records the session variables whenever they change,
 	// so the next launch can start with them.
 	RememberSession func(vars map[string]string)
+	// ResponseView is how JSON response bodies were last shown, remembered
+	// from the last run. Nil starts from the prettify_json setting.
+	ResponseView *ResponseView
+	// RememberResponseView records the view whenever it changes, so the next
+	// launch can start in it.
+	RememberResponseView func(ResponseView)
 	// LocalValues, when set, keeps each environment's current values on this
 	// machine, like Postman Desktop. Session variables become the active
 	// environment's current values.
@@ -147,6 +153,10 @@ type App struct {
 	sessionVars t.AnySignal[map[string]string]
 	// rememberSession, when set, records session variables between runs.
 	rememberSession func(map[string]string)
+	// responseView is how every session shows JSON bodies, and
+	// rememberResponseView, when set, records it between runs.
+	responseView         t.Signal[ResponseView]
+	rememberResponseView func(ResponseView)
 	localValues     LocalValues
 
 	sessions      t.AnySignal[[]*Session]
@@ -285,6 +295,8 @@ func New(cfg Config) *App {
 		sidebarGradient:        t.NewSignal(settings.SidebarGradient),
 		sidebarGradientPreview: t.NewSignal(""),
 	}
+	a.responseView = t.NewSignal(startupResponseView(cfg.ResponseView, settings))
+	a.rememberResponseView = cfg.RememberResponseView
 	a.tree = t.NewTreeState(buildTree(cfg.Collection))
 	if cfg.History != nil {
 		a.historyStore = newHistorySaver(cfg.History)
@@ -453,9 +465,18 @@ func (a *App) createSession(req model.Request) *Session {
 	}
 	s.nativeAuth = a.requestSuffix() == collection.NativeSuffix
 	s.dispatch = a.dispatch
-	s.prettifyJSON = a.settings.Response.PrettifyJSON
+	s.responseView = a.responseView
 	a.listProtoMethods(s)
 	return s
+}
+
+// startupResponseView is the view remembered from the last run, or Pretty or
+// Raw as the prettify_json setting says.
+func startupResponseView(remembered *ResponseView, settings config.Settings) ResponseView {
+	if remembered != nil {
+		return *remembered
+	}
+	return ResponseView{Pretty: settings.Response.PrettifyJSON}
 }
 
 // openRequest shows req from the collection. A tab that already holds the

@@ -49,6 +49,9 @@ func EnvironmentMemory() string { return filepath.Join(DataDir(), "environments.
 // SessionMemory remembers the session variables of each collection.
 func SessionMemory() string { return filepath.Join(DataDir(), "session-variables.json") }
 
+// ResponseViewMemory remembers how JSON response bodies were last shown.
+func ResponseViewMemory() string { return filepath.Join(DataDir(), "response-view.json") }
+
 // SocketDir holds the sockets of running instances, which `posting remote`
 // talks to: $XDG_RUNTIME_DIR/posting, or a directory of the user's own in
 // the temporary directory. Neither is shared with other users.

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/darrenburns/posting/v3/internal/ui"
 )
 
 // Only source identities are persisted, never credentials or request documents.
@@ -31,6 +33,17 @@ func saveSourceSelection(file string, selection sourceSelection) error {
 		return fmt.Errorf("invalid source selection")
 	}
 	return writePrivateJSON(file, selection)
+}
+
+// readResponseView is the JSON body view remembered in file, or nil when
+// none was chosen yet or the file can't be read.
+func readResponseView(file string) *ui.ResponseView {
+	var view ui.ResponseView
+	data, err := os.ReadFile(file)
+	if err != nil || json.Unmarshal(data, &view) != nil {
+		return nil
+	}
+	return &view
 }
 
 func writePrivateJSON(file string, value any) error {

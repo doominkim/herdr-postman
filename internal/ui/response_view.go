@@ -369,10 +369,10 @@ func (b responseBody) Keybinds() []t.Keybind {
 		return nil
 	}
 	name := "JSON tree"
-	if b.session.responseJSONTree.Peek() {
+	if b.session.responseView.Peek().Tree {
 		name = "Text view"
 	}
-	return []t.Keybind{{Key: "t", Name: name, Action: b.session.toggleBodyView}}
+	return []t.Keybind{{Key: "t", Name: name, Action: func() { b.app.toggleBodyView(b.session) }}}
 }
 
 func (b responseBody) Build(ctx t.BuildContext) t.Widget {
@@ -381,7 +381,7 @@ func (b responseBody) Build(ctx t.BuildContext) t.Widget {
 	if len(resp.Body) == 0 {
 		return emptyState{Title: "Empty body", Lines: []string{"The server returned " + statusText(s.responseStatus) + " with no content"}}
 	}
-	if state := s.responseJSON.Get(); state != nil && s.responseJSONTree.Get() {
+	if state := s.responseJSON.Get(); state != nil && s.responseView.Get().Tree {
 		return responseJSON{app: b.app, session: s, state: state}
 	}
 	image := s.responseImage.Get() != nil
@@ -430,7 +430,7 @@ func (b responseBody) Build(ctx t.BuildContext) t.Widget {
 	return t.Column{
 		Style: t.Style{Width: t.Flex(1), Height: t.Flex(1)},
 		Children: append(children,
-			responseBodyStatus{session: s, contentType: contentType, copyBody: copyBody},
+			responseBodyStatus{app: b.app, session: s, contentType: contentType, copyBody: copyBody},
 		),
 	}
 }
@@ -461,6 +461,7 @@ func (v responseBodyViewport) OnLayout(_ t.BuildContext, metrics t.LayoutMetrics
 // cursor moves, so the body above doesn't have to.
 type responseBodyStatus struct {
 	fillWidth
+	app         *App
 	session     *Session
 	contentType string
 	copyBody    func()
@@ -475,6 +476,9 @@ func (r responseBodyStatus) Build(ctx t.BuildContext) t.Widget {
 		wrapLabel = "wrap on"
 	}
 	children := []t.Widget{}
+	if r.session.responseJSON.Get() != nil {
+		children = append(children, r.app.bodyViewSwitch(r.session))
+	}
 	if r.session.responseVisual.Get() {
 		children = append(children, t.Text{Content: " VISUAL ", Style: t.Style{ForegroundColor: theme.TextOnAccent, BackgroundColor: theme.Accent, Bold: true}})
 	}
@@ -499,12 +503,6 @@ func (r responseBodyStatus) Build(ctx t.BuildContext) t.Widget {
 	}
 	if r.session.responseImage.Get() != nil {
 		children = append(children, t.Text{Content: "preview", Style: t.Style{ForegroundColor: theme.TextMuted}, Click: func(t.MouseEvent) { r.session.toggleImagePreview() }})
-	}
-	if r.session.responseJSON.Get() != nil {
-		children = append(children, t.Text{
-			ID: "resp-body-json", Content: "JSON tree", Style: t.Style{ForegroundColor: theme.AccentText},
-			Click: func(t.MouseEvent) { r.session.toggleBodyView() },
-		})
 	}
 	return t.Row{
 		Style:   t.Style{Width: t.Flex(1), Height: t.Cells(1), BackgroundColor: theme.Surface, Padding: t.EdgeInsetsXY(1, 0)},
@@ -722,15 +720,21 @@ func (r responseTrace) Build(ctx t.BuildContext) t.Widget {
 	}
 }
 
-// formatBody pretty-prints JSON bodies and returns others unchanged.
-func formatBody(resp *model.Response, prettify bool) string {
-	if prettify && strings.Contains(resp.ContentType(), "json") {
+// bodyText is resp's body as the text view shows it: JSON pretty-printed in
+// the Pretty view, whatever its content type says, and anything else as is.
+func (s *Session) bodyText(resp *model.Response) string {
+	return formatJSON(resp.Body, s.responseView.Peek().Pretty)
+}
+
+// formatJSON indents body when prettify is set and it is JSON.
+func formatJSON(body []byte, prettify bool) string {
+	if prettify {
 		var out bytes.Buffer
-		if err := json.Indent(&out, resp.Body, "", "  "); err == nil {
+		if err := json.Indent(&out, body, "", "  "); err == nil {
 			return out.String()
 		}
 	}
-	return string(resp.Body)
+	return string(body)
 }
 
 func escapeMarkup(s string) string {

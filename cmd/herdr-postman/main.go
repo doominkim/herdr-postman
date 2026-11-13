@@ -154,6 +154,9 @@ func appConfig(root, bin string, environmentFiles ...string) (ui.Config, error) 
 		Sender:              &client.PostmanCollection{Binary: bin, Root: root, Render: store.Render},
 		StartupMessages:     messages,
 	}
+	viewMemory := paths.ResponseViewMemory()
+	cfg.ResponseView = readResponseView(viewMemory)
+	cfg.RememberResponseView = func(view ui.ResponseView) { _ = writePrivateJSON(viewMemory, view) }
 	if settings.WatchCollectionFiles {
 		cfg.Watch = store
 	}

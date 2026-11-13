@@ -109,7 +109,7 @@ func (s *Session) toggleImagePreview() {
 	asText := !s.responseAsText.Peek()
 	text := ""
 	if asText {
-		text = formatBody(s.response.Peek(), s.prettifyJSON)
+		text = s.bodyText(s.response.Peek())
 	}
 	s.responseBody.SetText(text)
 	s.responseBody.ClearSelection()

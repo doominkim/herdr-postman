@@ -151,8 +151,7 @@ type Session struct {
 	responseSearchOpen         t.Signal[bool]
 	responseImage              t.AnySignal[*imagePreview]
 	responseAsText             t.Signal[bool]
-	responseJSON               t.AnySignal[*t.JSONViewerState]
-	responseJSONTree           t.Signal[bool]
+	responseJSON               t.AnySignal[*jsonTreeState]
 	responseJSONQuery          *t.TextInputState
 	responseJSONError          t.Signal[string]
 	// errorView is the read-only view of errorMessage, the failure the
@@ -191,8 +190,9 @@ type Session struct {
 	// settled run once the exchange in flight ends, however it ends.
 	settled []func()
 
-	// prettifyJSON indents JSON response bodies.
-	prettifyJSON bool
+	// responseView is how JSON bodies are shown. The app shares one with every
+	// session (see App.setResponseView).
+	responseView t.Signal[ResponseView]
 
 	// syncing suppresses URL<->query feedback loops.
 	syncing bool
@@ -261,8 +261,8 @@ func newSession(id int, req model.Request) *Session {
 		responseSearchOpen:     t.NewSignal(false),
 		responseImage:          t.NewAnySignal[*imagePreview](nil),
 		responseAsText:         t.NewSignal(false),
-		responseJSON:           t.NewAnySignal[*t.JSONViewerState](nil),
-		responseJSONTree:       t.NewSignal(false),
+		responseJSON:           t.NewAnySignal[*jsonTreeState](nil),
+		responseView:           t.NewSignal(ResponseView{Pretty: true}),
 		responseJSONQuery:      t.NewTextInputState(""),
 		responseJSONError:      t.NewSignal(""),
 		responseVisual:         t.NewSignal(false),
@@ -800,7 +800,7 @@ func (s *Session) showLive(req model.Request, resp *model.Response) {
 	if len(resp.Events) > 0 {
 		s.messages.update(s, resp.Events, false)
 	} else {
-		s.responseBody.SetText(formatBody(resp, s.prettifyJSON))
+		s.responseBody.SetText(s.bodyText(resp))
 		s.setResponseJSON(resp.Body)
 	}
 	s.responseHeaders.SetRows(resp.Headers)
@@ -826,7 +826,7 @@ func (s *Session) showResponse(resp *model.Response, entry *model.HistoryEntry) 
 		s.messages.update(s, resp.Events, !keep)
 	} else {
 		if s.responseImage.Peek() == nil {
-			s.responseBody.SetText(formatBody(resp, s.prettifyJSON))
+			s.responseBody.SetText(s.bodyText(resp))
 		} else {
 			// Don't split binary data into text-area graphemes unless the
 			// user explicitly chooses to view the image as text.
