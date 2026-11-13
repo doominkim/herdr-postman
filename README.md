@@ -18,7 +18,7 @@ Edit requests, choose an environment, and inspect the response body, headers, st
 
 Press **Ctrl+Enter** to send from any panel. Dragging across the request or response body copies the selection; **Copy all** on the response heading copies the whole response body. When a request fails, the error can be dragged over and copied the same way, and **Copy error** copies all of it. To read modified keys such as Ctrl+Enter, herdr-postman turns on the Kitty keyboard protocol; set `TERMA_DISABLE_KITTY_KEYBOARD=1` if your terminal misreads keys with it.
 
-A JSON response can be shown **Pretty**, **Raw** or as a **Tree** from the switch under the body, and **t** toggles the tree. The tree keeps the response's key order and opens with only the top level showing: arrays read `data (2)`, and a closed object previews its first entries, such as `[0] {id: 1, name: "Ada", …}`. Click a row to open or close it. The chosen view applies to every tab and is remembered for the next launch.
+A JSON response can be shown **Pretty**, **Raw** or as a **Tree** from the switch under the body, and **t** toggles the tree. The tree keeps the response's key order and opens with only the top level showing: arrays read `data (2)`, and a closed object previews as many of its first entries as fit on the row, such as `[0] {id: 1, name: "Ada", …}`. Click a row to open or close it. The chosen view applies to every tab and is remembered for the next launch.
 
 Click on a variable such as `{{product_id}}` in the URL, a params, headers or form row, or the raw body, or move the cursor onto it, to see its value and source below it. Click the value to change it: **Enter** saves it as the current value, as in the Variables dialog, and **Esc** cancels.
 

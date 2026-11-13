@@ -153,11 +153,12 @@ type App struct {
 	sessionVars t.AnySignal[map[string]string]
 	// rememberSession, when set, records session variables between runs.
 	rememberSession func(map[string]string)
+	localValues     LocalValues
+
 	// responseView is how every session shows JSON bodies, and
 	// rememberResponseView, when set, records it between runs.
 	responseView         t.Signal[ResponseView]
 	rememberResponseView func(ResponseView)
-	localValues     LocalValues
 
 	sessions      t.AnySignal[[]*Session]
 	active        t.Signal[int] // Session.id of the visible session

@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"io"
 	"strings"
-	"unicode/utf8"
 
+	"github.com/charmbracelet/x/ansi"
 	t "github.com/darrenburns/terma"
 	"github.com/theory/jsonpath"
 	"github.com/theory/jsonpath/spec"
@@ -22,9 +22,8 @@ type jsonNode struct {
 	// Raw is the value exactly as the response wrote it, so copies keep the
 	// response's key order and number lexemes.
 	Raw []byte
-	// Preview is a closed object's first entries, e.g. {id: 1, name: "Ada", …}.
-	// Arrays and empty objects have none.
-	Preview string
+	// previewParts are an object's first entries for its preview (see preview).
+	previewParts []string
 	// ancestor marks a node shown only as context for a JSONPath match.
 	ancestor bool
 }
@@ -37,6 +36,9 @@ type jsonTreeState struct {
 	scroll *t.ScrollState
 	body   []byte
 	root   t.TreeNode[jsonNode]
+	// width is the tree's width as of its last layout, which previews fill.
+	// Until the first layout it is 0.
+	width t.Signal[int]
 
 	path    *jsonpath.Path
 	query   t.Signal[string]
@@ -64,6 +66,7 @@ func newJSONTreeState(body []byte) (*jsonTreeState, error) {
 		scroll:  t.NewScrollState(),
 		body:    body,
 		root:    root,
+		width:   t.NewSignal(0),
 		query:   t.NewSignal(""),
 		matches: t.NewSignal(1),
 	}
@@ -112,7 +115,7 @@ func parseJSONNode(raw json.RawMessage, label string, path spec.NormalizedPath) 
 			node.Children = append(node.Children, c)
 		}
 		node.Data.Value = object
-		node.Data.Preview = objectPreview(node.Children)
+		node.Data.previewParts = previewParts(node.Children)
 	case '[':
 		decoder := json.NewDecoder(bytes.NewReader(raw))
 		decoder.Token()
@@ -142,38 +145,60 @@ func parseJSONNode(raw json.RawMessage, label string, path spec.NormalizedPath) 
 }
 
 const (
-	// previewWidth bounds an object preview, braces included.
-	previewWidth = 60
+	// maxPreviewWidth bounds the entries kept for previews: wider than any
+	// terminal row, so the row's width decides what is shown.
+	maxPreviewWidth = 512
 	// previewStringWidth bounds each string in a preview, quotes included.
 	previewStringWidth = 20
 )
 
-// objectPreview lists entries until the next would pass previewWidth, then
-// ends with "…". Nested objects and arrays show as {…} and […].
-func objectPreview(entries []t.TreeNode[jsonNode]) string {
-	if len(entries) == 0 {
+// previewParts are an object's entries as previews show them, "key: value",
+// as many as could fit in maxPreviewWidth.
+func previewParts(entries []t.TreeNode[jsonNode]) []string {
+	parts := []string{}
+	width := 0
+	for _, entry := range entries {
+		if width > maxPreviewWidth {
+			break
+		}
+		part := entry.Data.Label + ": " + previewValue(entry.Data)
+		parts = append(parts, part)
+		width += ansi.StringWidth(part) + 2
+	}
+	return parts
+}
+
+// preview is a closed object in at most width cells: its entries until the
+// next would not fit, then "…", such as {id: 1, name: "Ada", …}. Nested
+// objects and arrays show as {…} and […]. Arrays and empty objects have none.
+func (n jsonNode) preview(width int) string {
+	object, ok := n.Value.(map[string]any)
+	if !ok || len(object) == 0 {
 		return ""
 	}
 	var b strings.Builder
 	b.WriteString("{")
-	width := 1
-	for i, entry := range entries {
+	used := 1
+	for i := range len(object) {
 		separator := ""
 		if i > 0 {
 			separator = ", "
 		}
-		part := separator + entry.Data.Label + ": " + previewValue(entry.Data)
 		// The last entry only needs room for "}"; others leave room for ", …}".
 		room := 4
-		if i == len(entries)-1 {
+		if i == len(object)-1 {
 			room = 1
 		}
-		if width+utf8.RuneCountInString(part)+room > previewWidth {
+		part := separator
+		if i < len(n.previewParts) {
+			part += n.previewParts[i]
+		}
+		if i == len(n.previewParts) || used+ansi.StringWidth(part)+room > width {
 			b.WriteString(separator + "…")
 			break
 		}
 		b.WriteString(part)
-		width += utf8.RuneCountInString(part)
+		used += ansi.StringWidth(part)
 	}
 	b.WriteString("}")
 	return b.String()

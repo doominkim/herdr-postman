@@ -249,16 +249,45 @@ func TestResponseJSONObjectPreview(tt *testing.T) {
 		tt.Fatal(err)
 	}
 	rows := state.Tree.Nodes.Peek()
-	want := `{id: 1, description: "a description far…", tags: […], …}`
-	if got := rows[0].Data.Preview; got != want {
-		tt.Fatalf("preview = %q, want %q", got, want)
+	for _, c := range []struct {
+		width int
+		want  string
+	}{
+		{56, `{id: 1, description: "a description far…", tags: […], …}`},
+		{55, `{id: 1, description: "a description far…", …}`},
+		{200, `{id: 1, description: "a description far…", tags: […], meta: {}, list: [], more: true}`},
+		{6, `{…}`},
+	} {
+		got := rows[0].Data.preview(c.width)
+		if got != c.want || utf8.RuneCountInString(got) > max(c.width, 3) {
+			tt.Fatalf("preview in %d cells = %q, want %q", c.width, got, c.want)
+		}
 	}
-	if got := rows[1].Data.Preview; got != `{"a b ": 1}` {
+	if got := rows[1].Data.preview(60); got != `{"a b ": 1}` {
 		tt.Fatalf("awkward keys should be quoted in previews too: %q", got)
 	}
-	if got := rows[2].Data.Preview; got != "" {
+	if got := rows[2].Data.preview(60); got != "" {
 		tt.Fatalf("an empty object has nothing to preview: %q", got)
 	}
+}
+
+func TestResponseJSONPreviewFillsTheRow(tt *testing.T) {
+	const body = `{"data":[{"id":1,"name":"Ada","email":"ada@example.com","role":"admin","team":"engines","city":"London","active":true,"score":42,"joined":"1843-07-10","notes":null}]}`
+	app, _ := bodyApp(tt, "application/json", body)
+	p := t.NewPilot(tt, app, snapW, snapH)
+	p.Click(tabID(responseBodyViewID, "tree"))
+	clickTreeRow(tt, p, "data (1)")
+	bounds, _ := p.Bounds("resp-body")
+	for _, row := range strings.Split(p.TextOf("resp-body"), "\n") {
+		if i := strings.Index(row, "[0] {"); i >= 0 {
+			preview := row[i+len("[0] "):]
+			if n := utf8.RuneCountInString(preview); n <= 60 || utf8.RuneCountInString(row) > bounds.Width || !strings.HasSuffix(preview, "…}") {
+				tt.Fatalf("preview should fill the row (%d cells) and end with …}: %q", bounds.Width, row)
+			}
+			return
+		}
+	}
+	tt.Fatalf("no [0] row:\n%s", p.TextOf("resp-body"))
 }
 
 func TestResponseViewIsSharedAndRemembered(tt *testing.T) {

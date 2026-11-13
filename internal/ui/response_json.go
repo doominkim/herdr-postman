@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 
+	"github.com/charmbracelet/x/ansi"
 	t "github.com/darrenburns/terma"
 )
 
@@ -199,8 +200,8 @@ func (r responseJSON) Build(ctx t.BuildContext) t.Widget {
 }
 
 // tree lists the body's values as "key (2)" for arrays, "key {3}" for open
-// objects, a preview such as "key {id: 1, …}" for closed ones and
-// "key: value" otherwise. Clicking a row opens or closes it.
+// objects, a preview filling the row such as "key {id: 1, …}" for closed
+// ones and "key: value" otherwise. Clicking a row opens or closes it.
 func (r responseJSON) tree(ctx t.BuildContext) t.Widget {
 	theme, state := ctx.Theme(), r.state
 	tree := t.Tree[jsonNode]{
@@ -213,11 +214,14 @@ func (r responseJSON) tree(ctx t.BuildContext) t.Widget {
 		OnSelect:        func(jsonNode, []jsonNode) { state.toggleCursor() },
 	}
 	focused := ctx.IsFocused(tree)
+	width := state.width.Get()
 	tree.RenderNode = func(node jsonNode, nodeCtx t.TreeNodeContext) t.Widget {
 		style := t.Style{Width: t.Flex(1), ForegroundColor: theme.Text}
 		separator, value, color := jsonNodeSummary(node, theme)
-		if !nodeCtx.Expanded && node.Preview != "" {
-			value = node.Preview
+		if !nodeCtx.Expanded {
+			if preview := node.preview(previewRoom(width, nodeCtx.Depth, node.Label)); preview != "" {
+				value = preview
+			}
 		}
 		keyColor, separatorColor := theme.Primary, theme.TextMuted
 		if node.ancestor {
@@ -244,13 +248,42 @@ func (r responseJSON) tree(ctx t.BuildContext) t.Widget {
 			Style:   t.Style{ForegroundColor: theme.TextMuted},
 		}}}
 	}
-	return t.Scrollable{
-		State:               state.scroll,
-		Style:               t.Style{Width: t.Flex(1), Height: t.Flex(1)},
-		ScrollbarThumbColor: theme.ScrollbarThumb,
-		ScrollbarTrackColor: theme.ScrollbarTrack,
-		Child:               child,
+	return jsonTreeViewport{state: state, Column: t.Column{
+		Style: t.Style{Width: t.Flex(1), Height: t.Flex(1)},
+		Children: []t.Widget{t.Scrollable{
+			State:               state.scroll,
+			Style:               t.Style{Width: t.Flex(1), Height: t.Flex(1)},
+			ScrollbarThumbColor: theme.ScrollbarThumb,
+			ScrollbarTrackColor: theme.ScrollbarTrack,
+			Child:               child,
+		}},
+	}}
+}
+
+// previewRoom is what is left for a closed object's preview in a tree width
+// cells wide, after the row's indentation, its ▶ and its label. Until the
+// tree is laid out it allows 60 cells.
+func previewRoom(width, depth int, label string) int {
+	if width == 0 {
+		return 60
 	}
+	// Two cells of indentation per level, "▶ ", the label and its space, and
+	// a cell for the scrollbar.
+	return width - 2*depth - 2 - ansi.StringWidth(label) - 1 - 1
+}
+
+// jsonTreeViewport records the tree's width for previews to fill.
+type jsonTreeViewport struct {
+	t.Column
+	state *jsonTreeState
+}
+
+func (v jsonTreeViewport) Build(t.BuildContext) t.Widget { return v }
+
+func (v jsonTreeViewport) ChildWidgets() []t.Widget { return v.Children }
+
+func (v jsonTreeViewport) OnLayout(_ t.BuildContext, metrics t.LayoutMetrics) {
+	v.state.width.Set(metrics.Box().ContentWidth())
 }
 
 // Only the status row needs to rebuild when the cursor's path changes.
