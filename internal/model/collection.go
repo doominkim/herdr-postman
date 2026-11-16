@@ -15,17 +15,11 @@ type Collection struct {
 	Children []*Collection
 }
 
-// Sort orders children by name and requests by method (or kind) then name,
-// recursively. Names compare with NaturalCompare so "2" comes before "10".
+// Sort orders children and requests by name with NaturalCompare, so "2"
+// comes before "10", recursively. Method and kind don't affect the order.
 func (c *Collection) Sort() {
 	sort.SliceStable(c.Children, func(i, j int) bool { return NaturalCompare(c.Children[i].Name, c.Children[j].Name) < 0 })
-	sort.SliceStable(c.Requests, func(i, j int) bool {
-		a, b := c.Requests[i], c.Requests[j]
-		if a.SortRank() != b.SortRank() {
-			return a.SortRank() < b.SortRank()
-		}
-		return NaturalCompare(a.Name, b.Name) < 0
-	})
+	sort.SliceStable(c.Requests, func(i, j int) bool { return NaturalCompare(c.Requests[i].Name, c.Requests[j].Name) < 0 })
 	for _, child := range c.Children {
 		child.Sort()
 	}

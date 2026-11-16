@@ -250,14 +250,14 @@ func TestClickTreeOpensRequest(tt *testing.T) {
 
 func TestShiftClickSelectsARangeOfRequests(tt *testing.T) {
 	app := testApp()
-	clickText(tt, app, "Get user", 0)
+	clickText(tt, app, "Create user", 0)
 	opened := app.current().file.Peek()
-	shiftClickText(tt, app, "Create user", 0)
+	shiftClickText(tt, app, "Get user", 0)
 	var names []string
 	for _, r := range app.treeTargets() {
 		names = append(names, r.Name)
 	}
-	if want := []string{"Get user", "List users", "Create user"}; !slices.Equal(names, want) {
+	if want := []string{"Create user", "Delete user", "Get user"}; !slices.Equal(names, want) {
 		tt.Fatalf("shift+click should select from the clicked request to this one; selected %q, want %q", names, want)
 	}
 	if got := app.current().file.Peek(); got != opened {

@@ -36,16 +36,6 @@ func (m Method) Short() string {
 	return s
 }
 
-// SortRank orders requests within a collection: GET, POST, PUT, PATCH, DELETE, then the rest.
-func (m Method) SortRank() int {
-	for i, candidate := range []Method{MethodGet, MethodPost, MethodPut, MethodPatch, MethodDelete} {
-		if m == candidate {
-			return i
-		}
-	}
-	return 99
-}
-
 // KeyValue is a named value that can be switched off without being deleted.
 // It is used for headers, query parameters, path parameters and form fields.
 type KeyValue struct {
@@ -252,15 +242,6 @@ func (r Request) Badge() string {
 		return r.Method.Short()
 	}
 	return r.Kind().Badge
-}
-
-// SortRank orders requests in a collection: HTTP by method, then other
-// kinds in registry order.
-func (r Request) SortRank() int {
-	if r.Payload == nil {
-		return r.Method.SortRank()
-	}
-	return 100 + slices.Index(Kinds, r.Kind())
 }
 
 // PayloadSize is the size in bytes of what the request sends beyond its

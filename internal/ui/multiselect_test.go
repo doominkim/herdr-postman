@@ -48,13 +48,13 @@ func selectedRows(app *App) []string {
 
 func TestShiftDownSelectsARangeOfRequests(tt *testing.T) {
 	app := testApp()
-	moveTreeCursor(tt, app, "Get user")
+	moveTreeCursor(tt, app, "Create user")
 	s := sidebarScreen(tt, app, treeID)
 	s.pressKey(tt, "shift+down")
 	s.pressKey(tt, "shift+down")
-	want := []string{"GET Get user", "GET List users", "POST Create user"}
+	want := []string{"POST Create user", "DELETE Delete user", "GET Get user"}
 	if got := selectedRows(app); !slices.Equal(got, want) {
-		tt.Fatalf("shift+down twice from Get user selected %q, want %q", got, want)
+		tt.Fatalf("shift+down twice from Create user selected %q, want %q", got, want)
 	}
 	s.pressKey(tt, "down")
 	if got := selectedRows(app); len(got) != 0 {
@@ -123,11 +123,11 @@ func TestDeletingASelection(tt *testing.T) {
 		tt.Fatal("deleting a selection should ask first")
 	}
 	c := app.confirm.Peek()
-	if c.title != "Delete 2 requests?" || !strings.Contains(c.message, "Get user") || !strings.Contains(c.message, "List users") {
+	if c.title != "Delete 2 requests?" || !strings.Contains(c.message, "Create user") || !strings.Contains(c.message, "Delete user") {
 		tt.Fatalf("confirmation = %q: %q", c.title, c.message)
 	}
 	c.onYes()
-	want := []string{"users/get-user.posting.yaml", "users/list-users.posting.yaml"}
+	want := []string{"users/create-user.posting.yaml", "users/delete-user.posting.yaml"}
 	if !slices.Equal(store.deleted, want) {
 		tt.Fatalf("deleted %q, want %q; the selected folder isn't a request", store.deleted, want)
 	}
@@ -136,7 +136,7 @@ func TestDeletingASelection(tt *testing.T) {
 			tt.Errorf("%s is still in the collection", file)
 		}
 	}
-	if !app.fileExists("users/create-user.posting.yaml") {
+	if !app.fileExists("users/get-user.posting.yaml") {
 		tt.Error("a request outside the selection was deleted")
 	}
 	assertToast(tt, app, "Deleted 2 requests")
@@ -152,11 +152,11 @@ func TestDuplicatingASelection(tt *testing.T) {
 	s := sidebarScreen(tt, app, treeID)
 	selectFrom(tt, s, "GET Get user", 2)
 	s.pressKey(tt, "d")
-	want := []string{"users/get-user-copy.posting.yaml", "users/list-users-copy.posting.yaml", "users/create-user-copy.posting.yaml"}
+	want := []string{"users/get-user-copy.posting.yaml", "users/list-users-copy.posting.yaml", "users/update-user-copy.posting.yaml"}
 	if !slices.Equal(store.saved, want) {
 		tt.Fatalf("saved %q, want %q", store.saved, want)
 	}
-	if got, want := selectedRows(app), []string{"GET Get user (copy)", "GET List users (copy)", "POST Create user (copy)"}; !slices.Equal(got, want) {
+	if got, want := selectedRows(app), []string{"GET Get user (copy)", "GET List users (copy)", "PATCH Update user (copy)"}; !slices.Equal(got, want) {
 		tt.Errorf("selected %q after duplicating, want the copies %q", got, want)
 	}
 	if got := len(app.sessions.Peek()); got != tabs {
@@ -189,16 +189,16 @@ func TestSidebarOperationsWithoutASelectionActOnTheCursor(tt *testing.T) {
 
 func TestEnterOpensEachSelectedRequestInATab(tt *testing.T) {
 	app := testApp()
-	app.openRequest(sampleRequest(tt, "List users"))
+	app.openRequest(sampleRequest(tt, "Delete user"))
 	s := sidebarScreen(tt, app, treeID)
 	selectFrom(tt, s, "users/", 3)
 	s.pressKey(tt, "enter")
-	assertTabs(tt, app, "List users, Get user, Create user")
-	assertActive(tt, app, "Create user")
+	assertTabs(tt, app, "Delete user, Create user, Get user")
+	assertActive(tt, app, "Get user")
 
 	s.pressKey(tt, "down")
 	s.pressKey(tt, "enter")
-	assertTabs(tt, app, "List users, Get user, Create user, /Update user/")
+	assertTabs(tt, app, "Delete user, Create user, Get user, /List users/")
 }
 
 // historyScreen is the sample app showing four history entries, with IDs 1

@@ -80,8 +80,8 @@ func TestSnapshotRequestSummary(tt *testing.T) {
 }
 
 func TestSnapshotRequestSummaryOpensUpwards(tt *testing.T) {
-	app := appWithDescription("Delete user", longDescription, nil)
-	moveTreeCursor(tt, app, "Delete user")
+	app := appWithDescription("Update user", longDescription, nil)
+	moveTreeCursor(tt, app, "Update user")
 	t.RequestFocus(treeID)
 	t.AssertSnapshot(tt, app, snapW, 18, "Near the bottom of a short terminal, the summary opens upwards from the row")
 }

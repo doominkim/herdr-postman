@@ -92,7 +92,7 @@ var (
 	}
 )
 
-// Kinds lists every kind in menu and sort order. Each layer that keeps a
+// Kinds lists every kind in menu order. Each layer that keeps a
 // table keyed by kind has a test ranging over this list, so a new kind added
 // here turns those tests red until every layer knows about it.
 var Kinds = []*Kind{HTTPKind, GraphQLKind, GRPCKind, WebSocketKind}

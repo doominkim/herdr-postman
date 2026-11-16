@@ -288,20 +288,6 @@ func TestRequestJSONRejectsUnknownKind(t *testing.T) {
 	}
 }
 
-func TestSortPutsOtherKindsAfterHTTP(t *testing.T) {
-	gql := GraphQLKind.New()
-	gql.Name = "a"
-	c := &Collection{Requests: []Request{gql, {Name: "z", Method: MethodOptions}, {Name: "b", Method: MethodGet}}}
-	c.Sort()
-	var order []string
-	for _, r := range c.Requests {
-		order = append(order, r.Badge()+" "+r.Name)
-	}
-	if want := []string{"GET b", "OPT z", "GQL a"}; !reflect.DeepEqual(order, want) {
-		t.Fatalf("sorted = %v, want %v", order, want)
-	}
-}
-
 func TestPayloadSize(t *testing.T) {
 	r := NewRequest()
 	r.Body.Raw = "12345"

@@ -5,14 +5,16 @@ import (
 	"testing"
 )
 
-func TestSortOrdersNumbersInNamesByValue(t *testing.T) {
+func TestSortOrdersRequestsByNameOnly(t *testing.T) {
+	gql := GraphQLKind.New()
+	gql.Name = "step 2"
 	c := &Collection{
 		Children: []*Collection{{Name: "20"}, {Name: "2"}, {Name: "10"}, {Name: "1"}},
 		Requests: []Request{
 			{Name: "step 10", Method: MethodGet},
-			{Name: "step 2", Method: MethodGet},
-			{Name: "step 1", Method: MethodGet},
-			{Name: "step 1a", Method: MethodGet},
+			gql,
+			{Name: "step 1", Method: MethodDelete},
+			{Name: "step 1a", Method: MethodPost},
 		},
 	}
 	c.Sort()

@@ -60,9 +60,12 @@ func TestLoadPosting2Collection(t *testing.T) {
 	if users == nil || users.Path != "jsonplaceholder/users" || len(users.Requests) != 5 {
 		t.Fatalf("users folder = %+v", users)
 	}
-	// GET, POST, PUT/PATCH, DELETE order, as in Posting 2.
-	if users.Requests[0].Method != model.MethodGet || users.Requests[len(users.Requests)-1].Method != model.MethodDelete {
-		t.Errorf("requests aren't sorted by method: %v", users.Requests)
+	var names []string
+	for _, r := range users.Requests {
+		names = append(names, r.Name)
+	}
+	if want := []string{"create a user", "delete a user", "get a user", "get all users", "update a user"}; !reflect.DeepEqual(names, want) {
+		t.Errorf("requests = %v, want name order %v", names, want)
 	}
 }
 

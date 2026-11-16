@@ -17,13 +17,13 @@ import (
 
 func TestReviewEscapeStartsNewTreeRange(tt *testing.T) {
 	app := testApp()
-	moveTreeCursor(tt, app, "Get user")
+	moveTreeCursor(tt, app, "Create user")
 	s := sidebarScreen(tt, app, treeID)
 	s.pressKey(tt, "shift+down")
 	s.pressKey(tt, "shift+down")
 	s.pressKey(tt, "escape")
 	s.pressKey(tt, "shift+down")
-	want := []string{"POST Create user", "PATCH Update user"}
+	want := []string{"GET Get user", "GET List users"}
 	if got := selectedRows(app); !slices.Equal(got, want) {
 		tt.Fatalf("new range after Escape = %q, want %q", got, want)
 	}
@@ -117,7 +117,7 @@ func TestReviewFilteredSelectionNeverDeletesHiddenRequests(tt *testing.T) {
 	store := &recordingStore{}
 	app := storeApp(store)
 	s := sidebarScreen(tt, app, treeID)
-	selectFrom(tt, s, "GET Get user", 2)
+	selectFrom(tt, s, "POST Create user", 2)
 	app.searchTree("create")
 	s.render()
 	s.pressKey(tt, "backspace")
@@ -190,7 +190,7 @@ func TestTreeResetPreservesFilteredCollapsedView(tt *testing.T) {
 	app.tree.Collapse(folder)
 	app.searchTree("user")
 	s.render()
-	selectFrom(tt, s, "GET Get user", 2)
+	selectFrom(tt, s, "POST Create user", 2)
 	s.pressKey(tt, "escape")
 	if !app.tree.IsCollapsed(folder) {
 		tt.Fatal("reset expanded a collapsed folder")
@@ -199,7 +199,7 @@ func TestTreeResetPreservesFilteredCollapsedView(tt *testing.T) {
 		tt.Fatal("reset changed search")
 	}
 	shiftClickText(tt, app, "Update user", 0)
-	if got, want := selectedRows(app), []string{"POST Create user", "PATCH Update user"}; !slices.Equal(got, want) {
+	if got, want := selectedRows(app), []string{"GET Get user", "GET List users", "PATCH Update user"}; !slices.Equal(got, want) {
 		tt.Fatalf("new pointer range = %q, want %q", got, want)
 	}
 	s.render()
@@ -303,7 +303,7 @@ func TestHistoryTrimDropsRemovedSelectionAndAnchor(tt *testing.T) {
 func TestReviewerMouseBeforeRebuild(tt *testing.T) {
 	app := testApp()
 	s := sidebarScreen(tt, app, treeID)
-	selectFrom(tt, s, "GET Get user", 2)
+	selectFrom(tt, s, "POST Create user", 2)
 	// Escape action changes app state, but Terma does not synchronously render on key dispatch.
 	for _, bind := range s.focus.ActiveKeybinds() {
 		if bind.Key == "escape" {
@@ -313,7 +313,7 @@ func TestReviewerMouseBeforeRebuild(tt *testing.T) {
 	}
 	lines := strings.Split(s.renderer.ScreenText(), "\n")
 	for y, line := range lines {
-		x := strings.Index(line, "Delete user")
+		x := strings.Index(line, "Update user")
 		if x < 0 {
 			continue
 		}
@@ -327,7 +327,7 @@ func TestReviewerMouseBeforeRebuild(tt *testing.T) {
 		}
 		down.OnMouseDown(t.MouseEvent{X: x, Y: y, LocalX: x - owner.Bounds.X, LocalY: y - owner.Bounds.Y, Button: uv.MouseLeft, Mod: uv.ModShift, ClickCount: 1})
 		got := selectedRows(app)
-		if len(got) != 3 || got[0] != "POST Create user" || got[2] != "DELETE Delete user" {
+		if len(got) != 3 || got[0] != "GET Get user" || got[2] != "PATCH Update user" {
 			tt.Errorf("wrong range from Escape cursor: %q", got)
 		}
 		s.render()

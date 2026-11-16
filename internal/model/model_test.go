@@ -48,24 +48,6 @@ func TestResolvePathParams(t *testing.T) {
 	}
 }
 
-func TestSortCollection(t *testing.T) {
-	c := &Collection{Requests: []Request{
-		{Name: "b", Method: MethodDelete},
-		{Name: "z", Method: MethodGet},
-		{Name: "a", Method: MethodGet},
-		{Name: "h", Method: MethodHead},
-	}}
-	c.Sort()
-	var order []string
-	for _, r := range c.Requests {
-		order = append(order, string(r.Method)+" "+r.Name)
-	}
-	want := []string{"GET a", "GET z", "DELETE b", "HEAD h"}
-	if !reflect.DeepEqual(order, want) {
-		t.Fatalf("sorted = %v, want %v", order, want)
-	}
-}
-
 func TestIsSensitiveName(t *testing.T) {
 	for name, want := range map[string]bool{"API_TOKEN": true, "db_password": true, "BASE_URL": false, "apiKey": true} {
 		if got := IsSensitiveName(name); got != want {

@@ -67,7 +67,7 @@ func TestTreeSearchMatches(tt *testing.T) {
 		{"CHECK", []string{"GET Health check"}},
 		// A folder's name finds everything in it.
 		{"auth", []string{"auth/", "GET Current user", "POST Login"}},
-		{"  ", []string{"auth/", "GET Current user", "POST Login", "users/", "GET Get user", "GET List users", "POST Create user", "PATCH Update user", "DELETE Delete user", "GET Health check", "OPTIONS CORS preflight"}},
+		{"  ", []string{"auth/", "GET Current user", "POST Login", "users/", "POST Create user", "DELETE Delete user", "GET Get user", "GET List users", "PATCH Update user", "OPTIONS CORS preflight", "GET Health check"}},
 		{"nothing like this", nil},
 	} {
 		app := testApp()

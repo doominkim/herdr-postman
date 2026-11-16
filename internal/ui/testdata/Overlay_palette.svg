@@ -1363,11 +1363,11 @@
   <rect x="1091.6" y="184.4" width="8.4" height="19.6" fill="#0F0F1F"/>
   <path d="M 29.0000 194.2000 L 33.2000 194.2000 M 29.0000 184.4000 L 29.0000 194.2000 M 29.0000 194.2000 L 29.0000 204.0000" fill="none" stroke="#201A33" stroke-width="1.0500" shape-rendering="crispEdges"/>
   <path d="M 33.2000 194.2000 L 41.6000 194.2000" fill="none" stroke="#1F1A33" stroke-width="1.0500" shape-rendering="crispEdges"/>
-  <text x="58.4" y="194.2" fill="#503F66">GE</text>
-  <text x="75.2" y="194.2" fill="#503F65">T</text>
-  <text x="92.0" y="194.2" fill="#585664">Get</text>
-  <text x="125.6" y="194.2" fill="#585664">us</text>
-  <text x="142.4" y="194.2" fill="#575664">er</text>
+  <text x="58.4" y="194.2" fill="#335757">PO</text>
+  <text x="75.2" y="194.2" fill="#335756">S</text>
+  <text x="92.0" y="194.2" fill="#585664">Create</text>
+  <text x="150.8" y="194.2" fill="#575664">us</text>
+  <text x="167.6" y="194.2" fill="#575663">er</text>
   <text x="310.4" y="194.2" fill="#F5F5F6">Save</text>
   <text x="352.4" y="194.2" fill="#F5F5F6">request</text>
   <text x="738.8" y="194.2" fill="#9A96BE">ctrl+s</text>
@@ -1503,10 +1503,10 @@
   <rect x="1091.6" y="204.0" width="8.4" height="19.6" fill="#0F0F1F"/>
   <path d="M 29.0000 213.8000 L 33.2000 213.8000 M 29.0000 204.0000 L 29.0000 213.8000 M 29.0000 213.8000 L 29.0000 223.6000" fill="none" stroke="#1F1A33" stroke-width="1.0500" shape-rendering="crispEdges"/>
   <path d="M 33.2000 213.8000 L 41.6000 213.8000" fill="none" stroke="#1F1A33" stroke-width="1.0500" shape-rendering="crispEdges"/>
-  <text x="58.4" y="213.8" fill="#503F65">GET</text>
-  <text x="92.0" y="213.8" fill="#585664">List</text>
-  <text x="134.0" y="213.8" fill="#575664">us</text>
-  <text x="150.8" y="213.8" fill="#575663">ers</text>
+  <text x="58.4" y="213.8" fill="#593C3F">DEL</text>
+  <text x="92.0" y="213.8" fill="#585664">Dele</text>
+  <text x="125.6" y="213.8" fill="#575664">te</text>
+  <text x="150.8" y="213.8" fill="#575663">user</text>
   <text x="310.4" y="213.8" fill="#F5F5F6">Close</text>
   <text x="360.8" y="213.8" fill="#F5F5F6">request</text>
   <text x="428.0" y="213.8" fill="#F5F5F6">tab</text>
@@ -1644,11 +1644,11 @@
   <rect x="1091.6" y="223.6" width="8.4" height="19.6" fill="#0F0F1F"/>
   <path d="M 29.0000 233.4000 L 33.2000 233.4000 M 29.0000 223.6000 L 29.0000 233.4000 M 29.0000 233.4000 L 29.0000 243.2000" fill="none" stroke="#1F1A32" stroke-width="1.0500" shape-rendering="crispEdges"/>
   <path d="M 33.2000 233.4000 L 41.6000 233.4000" fill="none" stroke="#1F1A32" stroke-width="1.0500" shape-rendering="crispEdges"/>
-  <text x="58.4" y="233.4" fill="#335756">POS</text>
-  <text x="92.0" y="233.4" fill="#585664">Cr</text>
-  <text x="108.8" y="233.4" fill="#575664">eat</text>
-  <text x="134.0" y="233.4" fill="#575663">e</text>
-  <text x="150.8" y="233.4" fill="#575663">user</text>
+  <text x="58.4" y="233.4" fill="#503F65">GET</text>
+  <text x="92.0" y="233.4" fill="#585664">Ge</text>
+  <text x="108.8" y="233.4" fill="#575664">t</text>
+  <text x="125.6" y="233.4" fill="#575664">u</text>
+  <text x="134.0" y="233.4" fill="#575663">ser</text>
   <text x="310.4" y="233.4" fill="#F5F5F6">Search</text>
   <text x="369.2" y="233.4" fill="#F5F5F6">requests…</text>
   <text x="738.8" y="233.4" fill="#9A96BE">ctrl+g</text>
@@ -1784,11 +1784,10 @@
   <rect x="1091.6" y="243.2" width="8.4" height="19.6" fill="#0F0F1F"/>
   <path d="M 29.0000 253.0000 L 33.2000 253.0000 M 29.0000 243.2000 L 29.0000 253.0000 M 29.0000 253.0000 L 29.0000 262.8000" fill="none" stroke="#1E1A31" stroke-width="1.0500" shape-rendering="crispEdges"/>
   <path d="M 33.2000 253.0000 L 41.6000 253.0000" fill="none" stroke="#1E1A31" stroke-width="1.0500" shape-rendering="crispEdges"/>
-  <text x="58.4" y="253.0" fill="#4C4562">PAT</text>
-  <text x="92.0" y="253.0" fill="#575664">Upd</text>
-  <text x="117.2" y="253.0" fill="#575663">ate</text>
-  <text x="150.8" y="253.0" fill="#575663">use</text>
-  <text x="176.0" y="253.0" fill="#575563">r</text>
+  <text x="58.4" y="253.0" fill="#503F65">GET</text>
+  <text x="92.0" y="253.0" fill="#575664">Lis</text>
+  <text x="117.2" y="253.0" fill="#575663">t</text>
+  <text x="134.0" y="253.0" fill="#575663">users</text>
   <text x="310.4" y="253.0" fill="#F5F5F6">Go</text>
   <text x="335.6" y="253.0" fill="#F5F5F6">to</text>
   <text x="360.8" y="253.0" fill="#F5F5F6">open</text>
@@ -1926,9 +1925,9 @@
   <rect x="1091.6" y="262.8" width="8.4" height="19.6" fill="#0F0F1F"/>
   <path d="M 29.0000 272.6000 L 33.2000 272.6000 M 29.0000 262.8000 L 29.0000 272.6000" fill="none" stroke="#1E1A31" stroke-width="1.0500" shape-rendering="crispEdges"/>
   <path d="M 33.2000 272.6000 L 41.6000 272.6000" fill="none" stroke="#1E1A31" stroke-width="1.0500" shape-rendering="crispEdges"/>
-  <text x="58.4" y="272.6" fill="#593C3F">D</text>
-  <text x="66.8" y="272.6" fill="#583C3F">EL</text>
-  <text x="92.0" y="272.6" fill="#575663">Delete</text>
+  <text x="58.4" y="272.6" fill="#4C4562">P</text>
+  <text x="66.8" y="272.6" fill="#4B4562">AT</text>
+  <text x="92.0" y="272.6" fill="#575663">Update</text>
   <text x="150.8" y="272.6" fill="#575663">u</text>
   <text x="159.2" y="272.6" fill="#575563">se</text>
   <text x="176.0" y="272.6" fill="#565563">r</text>
@@ -2065,12 +2064,13 @@
   <rect x="1074.8" y="282.4" width="8.4" height="19.6" fill="#0F0F1F"/>
   <rect x="1083.2" y="282.4" width="8.4" height="19.6" fill="#0F0F1F"/>
   <rect x="1091.6" y="282.4" width="8.4" height="19.6" fill="#0F0F1F"/>
-  <text x="41.6" y="292.2" fill="#503F65">G</text>
-  <text x="50.0" y="292.2" fill="#503F65">ET</text>
-  <text x="75.2" y="292.2" fill="#575663">Health</text>
-  <text x="134.0" y="292.2" fill="#575563">che</text>
-  <text x="159.2" y="292.2" fill="#565563">c</text>
-  <text x="167.6" y="292.2" fill="#565562">k</text>
+  <text x="41.6" y="292.2" fill="#3C3A53">O</text>
+  <text x="50.0" y="292.2" fill="#3B3A53">PT</text>
+  <text x="75.2" y="292.2" fill="#575663">CORS</text>
+  <text x="117.2" y="292.2" fill="#575663">pr</text>
+  <text x="134.0" y="292.2" fill="#575563">efl</text>
+  <text x="159.2" y="292.2" fill="#565563">i</text>
+  <text x="167.6" y="292.2" fill="#565562">ght</text>
   <text x="310.4" y="292.2" class="bold" fill="#DDA8FB">Environment</text>
   <path d="M 411.2000 292.2000 L 419.6000 292.2000" fill="none" stroke="#39384F" stroke-width="1.0500" shape-rendering="crispEdges"/>
   <path d="M 419.6000 292.2000 L 428.0000 292.2000" fill="none" stroke="#39384F" stroke-width="1.0500" shape-rendering="crispEdges"/>
@@ -2247,12 +2247,13 @@
   <rect x="1074.8" y="302.0" width="8.4" height="19.6" fill="#0F0F1F"/>
   <rect x="1083.2" y="302.0" width="8.4" height="19.6" fill="#0F0F1F"/>
   <rect x="1091.6" y="302.0" width="8.4" height="19.6" fill="#0F0F1F"/>
-  <text x="41.6" y="311.8" fill="#3B3A53">OP</text>
-  <text x="58.4" y="311.8" fill="#3B3A52">T</text>
-  <text x="75.2" y="311.8" fill="#575663">CORS</text>
-  <text x="117.2" y="311.8" fill="#575563">pre</text>
-  <text x="142.4" y="311.8" fill="#565563">f</text>
-  <text x="150.8" y="311.8" fill="#565562">light</text>
+  <text x="41.6" y="311.8" fill="#503F65">GE</text>
+  <text x="58.4" y="311.8" fill="#503F65">T</text>
+  <text x="75.2" y="311.8" fill="#575663">Healt</text>
+  <text x="117.2" y="311.8" fill="#575563">h</text>
+  <text x="134.0" y="311.8" fill="#575563">c</text>
+  <text x="142.4" y="311.8" fill="#565563">h</text>
+  <text x="150.8" y="311.8" fill="#565562">eck</text>
   <text x="310.4" y="311.8" fill="#F5F5F6">Switch</text>
   <text x="369.2" y="311.8" fill="#F5F5F6">environment…</text>
   <text x="780.8" y="311.8" fill="#9A96BE">▸</text>
