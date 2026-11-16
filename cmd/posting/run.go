@@ -308,7 +308,7 @@ func loadRunRequests(opts runOptions) (string, []model.Request, error) {
 			return "", nil, fmt.Errorf("%s: Posting 3 doesn't run Python scripts; remove or replace its scripts before running headlessly", req.File)
 		}
 	}
-	slices.SortFunc(requests, func(a, b model.Request) int { return strings.Compare(a.File, b.File) })
+	slices.SortFunc(requests, func(a, b model.Request) int { return model.NaturalCompare(a.File, b.File) })
 	return root, requests, nil
 }
 

@@ -1,7 +1,9 @@
 package model
 
 import (
+	"cmp"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -14,19 +16,58 @@ type Collection struct {
 }
 
 // Sort orders children by name and requests by method (or kind) then name,
-// recursively.
+// recursively. Names compare with NaturalCompare so "2" comes before "10".
 func (c *Collection) Sort() {
-	sort.SliceStable(c.Children, func(i, j int) bool { return c.Children[i].Name < c.Children[j].Name })
+	sort.SliceStable(c.Children, func(i, j int) bool { return NaturalCompare(c.Children[i].Name, c.Children[j].Name) < 0 })
 	sort.SliceStable(c.Requests, func(i, j int) bool {
 		a, b := c.Requests[i], c.Requests[j]
 		if a.SortRank() != b.SortRank() {
 			return a.SortRank() < b.SortRank()
 		}
-		return a.Name < b.Name
+		return NaturalCompare(a.Name, b.Name) < 0
 	})
 	for _, child := range c.Children {
 		child.Sort()
 	}
+}
+
+// NaturalCompare compares strings like strings.Compare, except that runs of
+// ASCII digits compare by numeric value of any length. Equal values that are
+// written differently ("007" and "7") fall back to strings.Compare.
+func NaturalCompare(a, b string) int {
+	x, y := a, b
+	for x != "" && y != "" {
+		if !isDigit(x[0]) || !isDigit(y[0]) {
+			if x[0] != y[0] {
+				return cmp.Compare(x[0], y[0])
+			}
+			x, y = x[1:], y[1:]
+			continue
+		}
+		i, j := digitRun(x), digitRun(y)
+		nx, ny := strings.TrimLeft(x[:i], "0"), strings.TrimLeft(y[:j], "0")
+		if len(nx) != len(ny) {
+			return cmp.Compare(len(nx), len(ny))
+		}
+		if c := strings.Compare(nx, ny); c != 0 {
+			return c
+		}
+		x, y = x[i:], y[j:]
+	}
+	if c := cmp.Compare(len(x), len(y)); c != 0 {
+		return c
+	}
+	return strings.Compare(a, b)
+}
+
+func isDigit(c byte) bool { return '0' <= c && c <= '9' }
+
+func digitRun(s string) int {
+	n := 0
+	for n < len(s) && isDigit(s[n]) {
+		n++
+	}
+	return n
 }
 
 // Walk visits every request in the collection tree, depth first.
